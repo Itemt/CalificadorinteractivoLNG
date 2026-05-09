@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calificador Interactivo – Nivel Inicial</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="icon" href="favicon.png" type="image/png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== WELCOME SCREEN ===== -->
+  <div id="welcomeScreen" class="welcome-overlay">
+    <div class="welcome-card">
+      <div class="welcome-icon">🎓</div>
+      <h2 style="margin-bottom: 10px;">¡Bienvenido al Calificador!</h2>
+      <p style="color: var(--muted); margin-bottom: 20px; font-size: 0.95rem; line-height: 1.4;">
+        Crea una nueva base de datos para empezar, o abre un historial guardado.<br>
+        <span style="color: var(--s-color); font-weight: bold; font-size: 0.85rem;">Nota: Solo puedes abrir archivos .csv generados por esta aplicación.</span>
+      </p>
+      <div class="welcome-actions">
+        <button class="btn-welcome primary">📄 Crear Archivo Nuevo</button>
+        <button class="btn-welcome">📂 Abrir Archivo (.csv)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ADD CLASS MODAL ===== -->
+  <div id="addClassModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <h3>➕ Agregar Grado/Clase</h3>
+      <div class="form-group">
+        <label>Nombre de la Clase (Ej: Cuarto B)</label>
+        <input type="text" id="newClassName" placeholder="Nombre visible..." />
+      </div>
+      <div class="form-group">
+        <label>Lista de Estudiantes (Uno por línea)</label>
+        <textarea id="newClassStudents" rows="6" placeholder="Pérez Juan\nLópez Ana\n..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button onclick="document.getElementById('addClassModal').style.display='none'" class="btn-cancel">Cancelar</button>
+        <button onclick="saveNewClass()" class="btn-save">Guardar Clase</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== HERO HEADER ===== -->
+  <header class="hero">
+    <div class="hero-glow"></div>
+    <button class="theme-toggle" id="themeToggle" title="Cambiar tema">☀️</button>
+    <div class="hero-content">
+      <div class="hero-icon">🎓</div>
+      <h1>Calificador Interactivo</h1>
+      <p class="hero-sub">Valoración por dimensiones</p>
+      <div class="legend">
+        <span class="badge badge-s">⭐ Superior</span>
+        <span class="badge badge-a">🔥 Alto</span>
+        <span class="badge badge-p">🌱 En Proceso</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== CLASS TABS ===== -->
+  <nav class="tabs class-tabs" id="classTabs">
+    <!-- Tabs will be generated dynamically -->
+  </nav>
+
+  <!-- ===== PERIOD TABS ===== -->
+  <nav class="tabs period-tabs">
+    <button class="tab period-tab active" data-period="inicial">⏳ Inicial</button>
+    <button class="tab period-tab" data-period="basico">⏳ Básico</button>
+    <button class="tab period-tab" data-period="alto">⏳ Nivel Alto</button>
+    <button class="tab period-tab" data-period="superior">⏳ Superior</button>
+  </nav>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="container">
+
+    <!-- Stats bar -->
+    <div class="stats-bar" id="statsBar">
+      <div class="stat">
+        <span class="stat-num" id="countS">0</span>
+        <span class="stat-lbl">⭐ Superiores</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="countA">0</span>
+        <span class="stat-lbl">🔥 Altos</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="countP">0</span>
+        <span class="stat-lbl">🌱 En Proceso</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="countTotal">0</span>
+        <span class="stat-lbl">👩‍🎓 Estudiantes</span>
+      </div>
+    </div>
+
+    <!-- Table wrapper -->
+    <div class="table-wrap">
+      <table id="gradingTable">
+        <thead>
+          <tr>
+            <th class="col-student">👤 Estudiante</th>
+            <th class="col-dim">
+              <div class="dim-title">📚 Conceptos</div>
+              <div class="session-row header-actions" style="border:none;">
+                <span style="width: 22px; flex-shrink: 0;"></span>
+                <div class="session-btns">
+                  <button onclick="fillAll('conceptos', 'P')" class="h-btn h-p" title="Asignar En Proceso a la primera sesión vacía">P ⬇</button>
+                  <button onclick="fillAll('conceptos', 'A')" class="h-btn h-a" title="Asignar Alto a la primera sesión vacía">A ⬇</button>
+                  <button onclick="fillAll('conceptos', 'S')" class="h-btn h-s" title="Asignar Superior a la primera sesión vacía">S ⬇</button>
+                </div>
+              </div>
+            </th>
+            <th class="col-dim">
+              <div class="dim-title">🛠️ Práctica</div>
+              <div class="session-row header-actions" style="border:none;">
+                <span style="width: 22px; flex-shrink: 0;"></span>
+                <div class="session-btns">
+                  <button onclick="fillAll('practica', 'P')" class="h-btn h-p" title="Asignar En Proceso a la primera sesión vacía">P ⬇</button>
+                  <button onclick="fillAll('practica', 'A')" class="h-btn h-a" title="Asignar Alto a la primera sesión vacía">A ⬇</button>
+                  <button onclick="fillAll('practica', 'S')" class="h-btn h-s" title="Asignar Superior a la primera sesión vacía">S ⬇</button>
+                </div>
+              </div>
+            </th>
+            <th class="col-dim">
+              <div class="dim-title">🤝 Comportamiento</div>
+              <div class="session-row header-actions" style="border:none;">
+                <span style="width: 22px; flex-shrink: 0;"></span>
+                <div class="session-btns">
+                  <button onclick="fillAll('comportamiento', 'P')" class="h-btn h-p" title="Asignar En Proceso a la primera sesión vacía">P ⬇</button>
+                  <button onclick="fillAll('comportamiento', 'A')" class="h-btn h-a" title="Asignar Alto a la primera sesión vacía">A ⬇</button>
+                  <button onclick="fillAll('comportamiento', 'S')" class="h-btn h-s" title="Asignar Superior a la primera sesión vacía">S ⬇</button>
+                </div>
+              </div>
+            </th>
+            <th class="col-total">🏆 Valoración</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Export row -->
+      <div class="action-row">
+        <button class="btn-db" id="btnOpenMain" title="Abrir otra base de datos">📁 Abrir BD (.csv)</button>
+        <button class="btn-db" title="Guardar cambios en el archivo actual">💾 Guardar BD</button>
+        <button class="btn-db" title="Guardar como un archivo nuevo">📥 Exportar BD (.csv)</button>
+        <button class="btn-export" id="btnExport" title="Copiar notas a texto plano">📋 Copiar a portapapeles</button>
+        <button class="btn-reset" id="btnReset" title="Reiniciar todas las notas">🔄 Reiniciar clase</button>
+      </div>
+
+  </main>
+
+  <!-- ===== CONFETTI CANVAS ===== -->
+  <canvas id="confetti" style="pointer-events:none;position:fixed;inset:0;z-index:9999;"></canvas>
+
+  <!-- ===== ERROR MODAL ===== -->
+  <div class="modal-overlay" id="errorModal" style="display: none; z-index: 10000;">
+    <div class="modal-card" style="text-align: center;">
+      <h2 style="color: var(--s-color); margin-bottom: 15px;">⚠️ Atención</h2>
+      <p id="errorModalMsg" style="color: var(--muted); margin-bottom: 25px;">Ocurrió un error</p>
+      <button class="btn-save" onclick="document.getElementById('errorModal').style.display='none'" style="width: 100%;">Entendido</button>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/model.js"></script>
+  <script src="js/view.js"></script>
+  <script src="js/controller.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

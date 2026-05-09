@@ -1,0 +1,28 @@
+{
+  "name": "calificador-interactivo",
+  "version": "1.0.0",
+  "description": "Calificador interactivo para profesores",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "author": "",
+  "license": "ISC",
+  "build": {
+    "appId": "com.calificador.app",
+    "productName": "Calificador Interactivo",
+    "mac": {
+      "category": "public.app-category.education",
+      "icon": "build/icon.icns"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "devDependencies": {
+    "electron": "^41.5.1",
+    "electron-builder": "^26.8.1"
+  }
+}

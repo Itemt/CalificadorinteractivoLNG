@@ -1,53 +1,66 @@
-# Calificador Interactivo 🎓
+# 🎓 Calificador Interactivo LNG
 
-Una moderna y rápida aplicación de escritorio (basada en **Electron.js**) diseñada específicamente para profesores. Permite gestionar, evaluar y exportar el rendimiento de los estudiantes dividido en periodos de tiempo, manejando una persistencia de datos plana e interoperable mediante archivos `.csv`.
+Una aplicación de escritorio rápida, 100% offline y amigable diseñada para facilitar la labor docente al momento de calificar y administrar las notas de múltiples clases. Construida con tecnologías web (HTML, CSS, JS) y empaquetada con **Electron** para ofrecer instaladores nativos en Windows y macOS.
 
-## 🚀 Características Principales
+## ✨ Características Principales
 
-- **Evaluación por Dimensiones:** Califica a los estudiantes en tres áreas clave: *Conceptos, Práctica y Comportamiento*.
-- **Historial de Periodos:** Navegación por 4 niveles de tiempo (Inicial, Básico, Nivel Alto, Superior), almacenando un historial independiente de 3 semanas por cada bloque.
-- **Base de Datos Universal (.csv):** La aplicación genera y lee archivos `.csv`. Puedes abrir tu base de datos directamente en **Excel** para manipularla.
-- **Flujo Offline y Nativo:** Arquitectura nativa de escritorio sin dependencias de internet. Guardado instantáneo con diálogos de sistema (MacOS/Windows).
-- **Modo Claro / Oscuro:** Interfaz 100% adaptable y estéticamente moderna, con altos contrastes.
-- **Exportación Rápida:** Posibilidad de copiar un resumen de las notas al portapapeles para pegarlo instantáneamente en reportes u otras plataformas.
+- **Multi-Plataforma:** Instaladores nativos para Windows (`.exe`) y Mac (`.dmg`).
+- **100% Offline y Seguro:** Toda la información se guarda localmente en archivos planos `.csv` en la computadora del profesor. No requiere conexión a internet y los datos nunca se suben a la nube.
+- **Autoguardado y Backups:** Sistema inteligente de autoguardado cada 60 segundos y un sistema de copias de seguridad ocultas que mantiene las 5 versiones más recientes para evitar pérdida de datos.
+- **Metodología Avanzada:**
+  - **4 Periodos de Tiempo:** Inicial, Básico, Alto, Superior.
+  - **3 Componentes Pedagógicos:** Cognitivo (Conceptos), Praxiológico (Práctica) y Axiológico (Comportamiento).
+  - Historial independiente de 3 sesiones de clase por componente.
+- **Tour Guiado:** Sistema de Onboarding paso a paso integrado para facilitar el aprendizaje a usuarios no técnicos.
 
-## 🛠️ Tecnologías
+## 📦 Descarga e Instalación
 
-- **HTML / CSS / Vanilla JavaScript** (Arquitectura MVC limpia).
-- **Electron.js** (Backend, Acceso al File System, Empaquetado de Escritorio).
-- **Electron Builder** (Generación de instaladores nativos `.dmg`, `.exe`).
+Para instalar el Calificador Interactivo, dirígete a la pestaña de [**Releases**](../../releases/latest) de este repositorio.
 
-## 📥 Instalación (Modo Desarrollo)
-
-1. Clona este repositorio:
-   ```bash
-   git clone https://github.com/Itemt/CalificadorinteractivoLNG.git
-   ```
-2. Instala las dependencias:
-   ```bash
-   npm install
-   ```
-3. Ejecuta la aplicación en modo desarrollo:
-   ```bash
-   npm start
-   ```
-
-## 📦 Empaquetado (Instaladores)
-
-Para crear el instalador instalable (Ej: `.dmg` para MacOS o `.exe` para Windows), ejecuta:
-```bash
-npm run dist
-```
-Los archivos de instalación se generarán dentro de la carpeta `dist/`.
-
-## 📖 ¿Cómo se usa?
-
-1. Al abrir la app, selecciona **"Crear Archivo Nuevo"**. Se te pedirá guardar un nuevo archivo `.csv` en tu computadora (Ej: `Mi_Calificador_09_05_2026.csv`).
-2. Agrega una clase haciendo clic en el botón de **"+ Agregar Clase"**. Ingresa el nombre (ej. Sexto A) y la lista de nombres de los alumnos.
-3. Evalúa usando los botones de **S** (Superior), **A** (Alto) o **P** (En Proceso). Puedes usar los botones de flecha rápida en los títulos para asignar masivamente a todos los estudiantes vacíos.
-4. Cambia de periodo (Inicial, Básico...) usando las pestañas azules para avanzar en el año escolar sin perder el historial.
-5. Usa los botones de **"Guardar BD"** o cierra la app. Tu progreso estará seguro en tu archivo `.csv`.
-6. Si deseas abrir un archivo pasado, usa el botón de **"Abrir BD (.csv)"** y localiza tu archivo generado.
+1. **Si usas Windows:** Descarga el archivo que termina en `Setup.exe` y ejecútalo.
+2. **Si usas Mac:** Descarga el archivo que termina en `.dmg`, ábrelo y arrastra el ícono a tu carpeta de Aplicaciones.
 
 ---
-*Desarrollado con ♥ para facilitar la labor docente.*
+
+## 🛠️ Para Desarrolladores
+
+Si deseas clonar el código fuente, probarlo localmente o contribuir al proyecto:
+
+### Requisitos Previos
+- Node.js (v16 o superior)
+- Git
+
+### Instalación Local
+
+1. Clona el repositorio:
+   \`\`\`bash
+   git clone https://github.com/Itemt/CalificadorinteractivoLNG.git
+   cd CalificadorinteractivoLNG
+   \`\`\`
+
+2. Instala las dependencias:
+   \`\`\`bash
+   npm install
+   \`\`\`
+
+3. Ejecuta la aplicación en modo desarrollo:
+   \`\`\`bash
+   npm start
+   \`\`\`
+
+### Compilación y Empaquetado
+
+Este proyecto utiliza \`electron-builder\` y está integrado con **GitHub Actions** para compilarse y publicarse automáticamente al crear un "Tag" en Git. 
+
+Si deseas compilar la aplicación localmente (requiere configuración según tu Sistema Operativo):
+\`\`\`bash
+npm run dist
+\`\`\`
+
+## 🚀 Tecnologías
+- Vanilla JavaScript (ES6+)
+- HTML5 & CSS3 (Variables, Flexbox, CSS Grid)
+- [Electron.js](https://www.electronjs.org/) (Framework de Aplicaciones de Escritorio)
+
+## 📄 Licencia
+Distribuido bajo la Licencia ISC.

@@ -13,6 +13,9 @@ function createWindow () {
     }
   });
 
+  mainWindow.setMenuBarVisibility(false);
+  mainWindow.autoHideMenuBar = true;
+
   mainWindow.loadFile('index.html');
 }
 

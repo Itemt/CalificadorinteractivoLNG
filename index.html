@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Calificador Interactivo – Nivel Inicial</title>
+  <title>Calificador Interactivo LNG</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="icon" href="favicon.png" type="image/png" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body class="theme-transition">
 
   <!-- ===== WELCOME SCREEN ===== -->
   <div id="welcomeScreen" class="welcome-overlay">
+    <button class="theme-toggle" id="welcomeThemeToggle" title="Cambiar tema" style="z-index: 101;">☀️</button>
     <div class="welcome-card">
       <div class="welcome-icon">🎓</div>
       <h2 style="margin-bottom: 10px;">¡Bienvenido al Calificador!</h2>
@@ -59,7 +60,7 @@ Carlos Gómez
     <button class="theme-toggle" id="tourToggle" title="Repetir el Tour" style="right: 70px; font-size: 0.85rem; font-weight: bold; width: auto; padding: 0 15px; border-radius: 20px; height: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); gap: 6px;"><span>❓</span> Tour Guiado</button>
     <div class="hero-content">
       <div class="hero-icon">🎓</div>
-      <h1>Calificador Interactivo</h1>
+      <h1>Calificador Interactivo LNG</h1>
       <p class="hero-sub">Valoración por dimensiones</p>
       <div class="legend">
         <span class="badge badge-s">⭐ Superior</span>

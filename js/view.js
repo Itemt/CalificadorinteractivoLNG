@@ -13,14 +13,24 @@ class View {
   setupTheme() {
     let currentTheme = localStorage.getItem('calificador_theme') || 'dark';
     document.documentElement.setAttribute('data-theme', currentTheme);
-    this.themeToggleBtn.textContent = currentTheme === 'light' ? '🌙' : '☀️';
-    
-    this.themeToggleBtn.addEventListener('click', () => {
+    this.welcomeThemeToggle = document.getElementById('welcomeThemeToggle');
+
+    const updateIcon = () => {
+      const icon = currentTheme === 'light' ? '🌙' : '☀️';
+      if (this.themeToggleBtn) this.themeToggleBtn.textContent = icon;
+      if (this.welcomeThemeToggle) this.welcomeThemeToggle.textContent = icon;
+    };
+    updateIcon();
+
+    const toggleTheme = () => {
       currentTheme = currentTheme === 'light' ? 'dark' : 'light';
       document.documentElement.setAttribute('data-theme', currentTheme);
       localStorage.setItem('calificador_theme', currentTheme);
-      this.themeToggleBtn.textContent = currentTheme === 'light' ? '🌙' : '☀️';
-    });
+      updateIcon();
+    };
+
+    if (this.themeToggleBtn) this.themeToggleBtn.addEventListener('click', toggleTheme);
+    if (this.welcomeThemeToggle) this.welcomeThemeToggle.addEventListener('click', toggleTheme);
   }
 
   hideWelcomeScreen() {

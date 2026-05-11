@@ -681,9 +681,12 @@ td.col-dim-cell {
    ONBOARDING TOUR
    =================================================== */
 #tour-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000;
-  pointer-events: auto; display: none; opacity: 0; transition: opacity 0.3s ease;
-  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7); z-index: 9998;
+  display: none; opacity: 0; transition: opacity 0.3s ease;
+}
+[data-theme="dark"] #tour-overlay {
+  background: rgba(0,0,0,0.4);
 }
 #tour-overlay.visible { display: block; opacity: 1; }
 
@@ -698,10 +701,16 @@ td.col-dim-cell {
 }
 
 #tour-tooltip {
-  position: absolute; z-index: 10002; background: var(--surface);
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 20px; width: 320px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-  display: none; opacity: 0; transform: translateY(10px); transition: all 0.3s ease;
+  position: absolute; z-index: 10000;
+  background: var(--surface);
+  border-radius: 12px; padding: 24px; width: 340px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  display: none; opacity: 0; transform: translateY(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+[data-theme="dark"] #tour-tooltip {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(124, 77, 255, 0.2);
 }
 #tour-tooltip.visible { display: block; opacity: 1; transform: translateY(0); }
 

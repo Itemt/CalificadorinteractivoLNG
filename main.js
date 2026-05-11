@@ -1,16 +1,48 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+
+// ─── Global crash logger (se guarda en la carpeta de datos del programa) ──────
+let logPath;
+function writeLog(msg) {
+  try {
+    if (!logPath) {
+      const dataDir = app.getPath('userData');
+      if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+      logPath = path.join(dataDir, 'calificador_crash.log');
+    }
+    fs.appendFileSync(logPath, `[${new Date().toISOString()}] ${msg}\n`, 'utf8');
+  } catch (_) {}
+}
+
+process.on('uncaughtException', (err) => {
+  writeLog('uncaughtException: ' + err.stack);
+  app.quit();
+});
+
+process.on('unhandledRejection', (reason) => {
+  writeLog('unhandledRejection: ' + reason);
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Necesario para que Electron funcione desde rutas de red en Windows (ej. Parallels)
+app.commandLine.appendSwitch('no-sandbox');
+app.commandLine.appendSwitch('disable-setuid-sandbox');
 
 function createWindow () {
+  writeLog('createWindow() called. __dirname=' + __dirname);
   const iconPath = path.join(__dirname, 'assets/icon.png');
+  writeLog('iconPath exists: ' + fs.existsSync(iconPath));
+
   const windowOptions = {
     width: 1280,
     height: 800,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
+      sandbox: false
     }
   };
 
@@ -19,16 +51,34 @@ function createWindow () {
   }
 
   try {
+    writeLog('Creating BrowserWindow...');
     const mainWindow = new BrowserWindow(windowOptions);
     mainWindow.setMenuBarVisibility(false);
     mainWindow.autoHideMenuBar = true;
+
+    // Captura crashes del proceso renderizador (HTML/JS)
+    mainWindow.webContents.on('render-process-gone', (event, details) => {
+      writeLog('RENDERER CRASH: reason=' + details.reason + ' exitCode=' + details.exitCode);
+    });
+    mainWindow.webContents.on('did-fail-load', (event, code, desc, url) => {
+      writeLog('DID-FAIL-LOAD: code=' + code + ' desc=' + desc + ' url=' + url);
+    });
+    mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+      if (level >= 2) { // 2=warning, 3=error
+        writeLog('CONSOLE [lvl' + level + '] line=' + line + ': ' + message + ' (' + sourceId + ')');
+      }
+    });
+
+    writeLog('Loading index.html...');
     mainWindow.loadFile('index.html');
+    writeLog('Window created successfully.');
   } catch (err) {
-    fs.writeFileSync(path.join(app.getPath('desktop'), 'calificador_crash.log'), err.toString());
+    writeLog('createWindow error: ' + err.stack);
   }
 }
 
 app.whenReady().then(() => {
+  writeLog('app is ready.');
   createWindow();
 
   app.on('activate', function () {
@@ -37,6 +87,7 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', function () {
+  writeLog('window-all-closed event.');
   if (process.platform !== 'darwin') app.quit();
 });
 

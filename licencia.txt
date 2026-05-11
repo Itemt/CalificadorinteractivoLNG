@@ -1,0 +1,20 @@
+ACUERDO DE LICENCIA DE SOFTWARE
+
+CALIFICADOR INTERACTIVO LNG
+========================================
+
+Al instalar, copiar o utilizar este software, usted acepta los siguientes terminos:
+
+1. USO DEL SOFTWARE
+Este software ("Calificador Interactivo LNG") se proporciona "tal cual" y sin ninguna garantia expresa o implicita. Toda la informacion ingresada y almacenada en el sistema es de entera responsabilidad del usuario.
+
+2. ALMACENAMIENTO DE DATOS
+La aplicacion funciona 100% fuera de linea (offline). Los datos de las clases y los estudiantes se guardan estrictamente en archivos locales dentro de su computadora (.csv). Usted es responsable de mantener dichos archivos y no borrarlos accidentalmente de su sistema de archivos.
+
+3. PRIVACIDAD
+Dado que la aplicacion no se conecta a internet para transmitir datos, la privacidad de los estudiantes y sus calificaciones estan garantizadas, dependiendo unicamente de la seguridad de la computadora del usuario.
+
+4. DERECHOS DE AUTOR
+Todos los derechos de este software pertenecen a sus respectivos creadores. Esta prohibida su redistribucion no autorizada.
+
+Si acepta estos terminos, haga clic en "Aceptar" para continuar con la instalacion.

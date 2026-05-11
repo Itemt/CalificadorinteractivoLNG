@@ -1,6 +1,6 @@
 {
   "name": "calificador-interactivo",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Calificador interactivo para profesores",
   "main": "main.js",
   "scripts": {
@@ -32,6 +32,15 @@
         }
       ],
       "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Calificador Interactivo",
+      "license": "README.md"
     },
     "publish": ["github"]
   },

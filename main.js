@@ -59,3 +59,36 @@ ipcMain.handle('fs:readFile', async (event, filePath) => {
     });
   });
 });
+
+ipcMain.handle('fs:checkExists', async (event, filePath) => {
+  return fs.existsSync(filePath);
+});
+
+ipcMain.handle('fs:saveBackup', async (event, data) => {
+  try {
+    const backupDir = path.join(app.getPath('userData'), 'backups');
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+    
+    const timestamp = Date.now();
+    const backupPath = path.join(backupDir, `backup_${timestamp}.csv`);
+    
+    fs.writeFileSync(backupPath, data, 'utf8');
+    
+    const files = fs.readdirSync(backupDir)
+      .filter(f => f.startsWith('backup_') && f.endsWith('.csv'))
+      .map(f => ({ name: f, time: fs.statSync(path.join(backupDir, f)).mtime.getTime() }))
+      .sort((a, b) => b.time - a.time); 
+      
+    if (files.length > 5) {
+      for (let i = 5; i < files.length; i++) {
+        fs.unlinkSync(path.join(backupDir, files[i].name));
+      }
+    }
+    return true;
+  } catch (err) {
+    console.error("Backup failed:", err);
+    return false;
+  }
+});

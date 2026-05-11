@@ -10,6 +10,10 @@
   },
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Itemt/CalificadorinteractivoLNG.git"
+  },
   "build": {
     "appId": "com.calificador.app",
     "productName": "Calificador Interactivo",
@@ -18,8 +22,10 @@
       "icon": "build/icon.icns"
     },
     "win": {
-      "target": "nsis"
-    }
+      "target": "nsis",
+      "icon": "build/icon.png"
+    },
+    "publish": ["github"]
   },
   "devDependencies": {
     "electron": "^41.5.1",

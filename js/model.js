@@ -225,6 +225,7 @@ class Model {
       this.appData = this.parseCSV(contents);
       this.currentClass = Object.keys(this.appData.classes)[0] || null;
       this.currentFileHandle = filePath;
+      this.setLastFile(filePath);
       return true;
     } catch (e) {
       throw new Error("Formato de CSV inválido o corrupto.");
@@ -247,6 +248,7 @@ class Model {
         this.currentFileHandle = filePath;
       }
       await window.electronAPI.writeFile(this.currentFileHandle, csvStr);
+      this.setLastFile(this.currentFileHandle);
     } else {
       if (isSaveAs || !this.currentFileHandle) {
         if (!window.showSaveFilePicker) {
@@ -267,6 +269,62 @@ class Model {
       await writable.close();
     }
     return true;
+  }
+
+  setLastFile(filePath) {
+    if (typeof filePath === 'string') {
+      localStorage.setItem('calificador_lastFile', filePath);
+    }
+  }
+
+  async checkLastFile() {
+    if (!window.electronAPI) return false;
+    const lastFile = localStorage.getItem('calificador_lastFile');
+    if (!lastFile) return false;
+    
+    const exists = await window.electronAPI.checkExists(lastFile);
+    if (!exists) {
+      localStorage.removeItem('calificador_lastFile');
+      return false;
+    }
+    return lastFile;
+  }
+
+  async loadLastFile() {
+    if (!window.electronAPI) return false;
+    const lastFile = localStorage.getItem('calificador_lastFile');
+    if (!lastFile) return false;
+    
+    const exists = await window.electronAPI.checkExists(lastFile);
+    if (!exists) {
+      localStorage.removeItem('calificador_lastFile');
+      return false;
+    }
+    
+    try {
+      const contents = await window.electronAPI.readFile(lastFile);
+      this.appData = this.parseCSV(contents);
+      this.currentClass = Object.keys(this.appData.classes)[0] || null;
+      this.currentFileHandle = lastFile;
+      return lastFile;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async autoSave() {
+    if (Object.keys(this.appData.classes).length === 0) return; // Don't backup empty state if nothing has been done
+    const csvStr = this.generateCSV();
+    
+    if (window.electronAPI && typeof this.currentFileHandle === 'string') {
+      try {
+        await window.electronAPI.writeFile(this.currentFileHandle, csvStr);
+      } catch (e) {}
+    }
+    
+    if (window.electronAPI) {
+      await window.electronAPI.saveBackup(csvStr);
+    }
   }
 
   newFile() {

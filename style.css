@@ -676,3 +676,45 @@ td.col-dim-cell {
 
 .tab-add { background: transparent; border: 2px dashed var(--border); color: var(--muted); }
 .tab-add:hover { border-color: var(--accent); color: var(--white); background: var(--surface); }
+
+/* ===================================================
+   ONBOARDING TOUR
+   =================================================== */
+#tour-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000;
+  pointer-events: auto; display: none; opacity: 0; transition: opacity 0.3s ease;
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+}
+#tour-overlay.visible { display: block; opacity: 1; }
+
+.tour-highlight {
+  position: relative !important;
+  z-index: 10001 !important;
+  pointer-events: none !important;
+  background: var(--bg) !important;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 4px var(--accent), 0 0 30px rgba(124, 77, 255, 0.5) !important;
+  transition: all 0.3s ease;
+}
+
+#tour-tooltip {
+  position: absolute; z-index: 10002; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; width: 320px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  display: none; opacity: 0; transform: translateY(10px); transition: all 0.3s ease;
+}
+#tour-tooltip.visible { display: block; opacity: 1; transform: translateY(0); }
+
+.tour-title { font-size: 1.1rem; font-weight: 900; color: var(--accent); margin-bottom: 8px; }
+.tour-text { font-size: 0.9rem; color: var(--muted); margin-bottom: 20px; line-height: 1.4; }
+
+.tour-actions { display: flex; justify-content: space-between; align-items: center; }
+.tour-btn-skip { background: transparent; border: none; color: var(--muted); font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+.tour-btn-skip:hover { color: var(--s-color); }
+
+.tour-nav { display: flex; gap: 8px; }
+.tour-btn { padding: 8px 14px; border: none; border-radius: 999px; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: all var(--transition); }
+.tour-btn.prev { background: transparent; border: 2px solid var(--border); color: var(--muted); }
+.tour-btn.prev:hover { background: var(--border); color: var(--white); }
+.tour-btn.next { background: var(--accent); color: #fff; }
+.tour-btn.next:hover { background: #b47aff; box-shadow: 0 4px 12px #7c4dff55; }

@@ -50,8 +50,10 @@ class View {
   }
 
   bindWelcomeActions(onNew, onOpen) {
-    document.querySelector('.btn-welcome.primary').onclick = onNew;
-    document.querySelectorAll('.btn-welcome')[1].onclick = onOpen; 
+    const btnNew = document.getElementById('btnNewFile');
+    if (btnNew) btnNew.onclick = onNew;
+    const btnOpen = document.getElementById('btnOpenFile');
+    if (btnOpen) btnOpen.onclick = onOpen;
   }
 
   bindActionRow(onSave, onSaveAs, onExport, onReset, onFillAll) {

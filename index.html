@@ -21,8 +21,9 @@
         <span style="color: var(--s-color); font-weight: bold; font-size: 0.85rem;">Nota: Solo puedes abrir archivos .csv generados por esta aplicación.</span>
       </p>
       <div class="welcome-actions">
-        <button class="btn-welcome primary">📄 Crear Archivo Nuevo</button>
-        <button class="btn-welcome">📂 Abrir Archivo (.csv)</button>
+        <button id="btnContinueLast" class="btn-welcome primary" style="display:none; margin-bottom:10px; background:linear-gradient(135deg, #10b981, #059669); box-shadow:0 10px 20px rgba(16,185,129,0.3);">🔄 Continuar archivo anterior</button>
+        <button id="btnNewFile" class="btn-welcome primary">📄 Crear Archivo Nuevo</button>
+        <button id="btnOpenFile" class="btn-welcome">📂 Abrir Archivo (.csv)</button>
       </div>
     </div>
   </div>
@@ -36,8 +37,11 @@
         <input type="text" id="newClassName" placeholder="Nombre visible..." />
       </div>
       <div class="form-group">
-        <label>Lista de Estudiantes (Uno por línea)</label>
-        <textarea id="newClassStudents" rows="6" placeholder="Pérez Juan\nLópez Ana\n..."></textarea>
+        <label>Lista de Estudiantes (Presiona Enter después de cada nombre)</label>
+        <textarea id="newClassStudents" rows="6" placeholder="Juan Pérez
+Ana López
+Carlos Gómez
+..."></textarea>
       </div>
       <div class="modal-actions">
         <button onclick="document.getElementById('addClassModal').style.display='none'" class="btn-cancel">Cancelar</button>
@@ -49,7 +53,10 @@
   <!-- ===== HERO HEADER ===== -->
   <header class="hero">
     <div class="hero-glow"></div>
+    <button class="theme-toggle" id="homeToggle" title="Volver al Inicio" style="left: 20px; right: auto; font-size: 0.85rem; font-weight: bold; width: auto; padding: 0 15px; border-radius: 20px; height: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); gap: 6px;"><span>🏠</span> Cerrar / Crear Nuevo</button>
+    <div id="autoSaveIndicator" style="position:absolute; top:26px; left:230px; color:var(--s-color); font-size:0.85rem; font-weight:800; opacity:0; transition:opacity 0.5s;">☁️ Autoguardando...</div>
     <button class="theme-toggle" id="themeToggle" title="Cambiar tema">☀️</button>
+    <button class="theme-toggle" id="tourToggle" title="Repetir el Tour" style="right: 70px; font-size: 0.85rem; font-weight: bold; width: auto; padding: 0 15px; border-radius: 20px; height: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); gap: 6px;"><span>❓</span> Tour Guiado</button>
     <div class="hero-content">
       <div class="hero-icon">🎓</div>
       <h1>Calificador Interactivo</h1>
@@ -105,7 +112,7 @@
           <tr>
             <th class="col-student">👤 Estudiante</th>
             <th class="col-dim">
-              <div class="dim-title">📚 Conceptos</div>
+              <div class="dim-title" style="font-size: 0.8rem;">📚 C. Cognitivo (Conceptos)</div>
               <div class="session-row header-actions" style="border:none;">
                 <span style="width: 22px; flex-shrink: 0;"></span>
                 <div class="session-btns">
@@ -116,7 +123,7 @@
               </div>
             </th>
             <th class="col-dim">
-              <div class="dim-title">🛠️ Práctica</div>
+              <div class="dim-title" style="font-size: 0.8rem;">🛠️ C. Praxiológico (Práctica)</div>
               <div class="session-row header-actions" style="border:none;">
                 <span style="width: 22px; flex-shrink: 0;"></span>
                 <div class="session-btns">
@@ -127,7 +134,7 @@
               </div>
             </th>
             <th class="col-dim">
-              <div class="dim-title">🤝 Comportamiento</div>
+              <div class="dim-title" style="font-size: 0.8rem;">🤝 C. Axiológico (Comportamiento)</div>
               <div class="session-row header-actions" style="border:none;">
                 <span style="width: 22px; flex-shrink: 0;"></span>
                 <div class="session-btns">
@@ -146,7 +153,7 @@
 
     <!-- Export row -->
       <div class="action-row">
-        <button class="btn-db" id="btnOpenMain" title="Abrir otra base de datos">📁 Abrir BD (.csv)</button>
+        <button class="btn-db" id="btnOpenMain" title="Abrir otra base de datos">📁 Abrir base de datos de estudiantes (.csv)</button>
         <button class="btn-db" title="Guardar cambios en el archivo actual">💾 Guardar BD</button>
         <button class="btn-db" title="Guardar como un archivo nuevo">📥 Exportar BD (.csv)</button>
         <button class="btn-export" id="btnExport" title="Copiar notas a texto plano">📋 Copiar a portapapeles</button>
@@ -168,6 +175,7 @@
   </div>
 
   <script src="js/config.js"></script>
+  <script src="js/tour.js"></script>
   <script src="js/model.js"></script>
   <script src="js/view.js"></script>
   <script src="js/controller.js"></script>

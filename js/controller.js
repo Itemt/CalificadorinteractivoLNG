@@ -2,11 +2,75 @@ class Controller {
   constructor(model, view) {
     this.model = model;
     this.view = view;
+    this.autoSaveInterval = null;
   }
 
-  init() {
+  async init() {
     this.bindEvents();
-    // Wait for user interaction from welcome screen
+    
+    const lastPath = await this.model.checkLastFile();
+    if (lastPath) {
+      const btnContinue = document.getElementById('btnContinueLast');
+      if (btnContinue) {
+        btnContinue.style.display = 'block';
+        const fileName = lastPath.split('/').pop().split('\\').pop();
+        btnContinue.textContent = `🔄 Continuar con: ${fileName}`;
+        btnContinue.onclick = async () => {
+          const loaded = await this.model.loadLastFile();
+          if (loaded) {
+            this.view.hideWelcomeScreen();
+            this.refreshView();
+            this.startAutoSave();
+            this.view.showToast('📄 Archivo recuperado');
+          } else {
+            this.view.showError('No se pudo leer el archivo anterior.');
+          }
+        };
+      }
+    }
+    
+    this.initTour();
+  }
+
+  initTour() {
+    const steps = [
+      {
+        target: '#classTabs',
+        title: 'Tus Clases',
+        text: 'Comienza aquí creando tus clases y pegando tu lista de estudiantes. Cada pestaña es una clase distinta.'
+      },
+      {
+        target: '.header-actions',
+        title: 'Calificación Rápida',
+        text: 'Califica a toda tu clase de una vez utilizando estos botones de flecha. Llenarán automáticamente las casillas vacías.'
+      },
+      {
+        target: '.period-tabs',
+        title: 'Periodos de Tiempo',
+        text: 'Avanza en el tiempo escolar. Cada nivel (Inicial, Básico...) representa 3 semanas de historial de notas independiente.'
+      },
+      {
+        target: '.action-row',
+        title: 'Exportar y Guardar',
+        text: 'Tus datos se autoguardan cada minuto, pero aquí puedes exportar una copia o copiar las notas al portapapeles.'
+      }
+    ];
+    this.tour = new Tour(steps);
+    
+    const btnTour = document.getElementById('tourToggle');
+    if (btnTour) btnTour.onclick = () => {
+      this.view.hideWelcomeScreen();
+      this.tour.start();
+    };
+
+    const btnHome = document.getElementById('homeToggle');
+    if (btnHome) btnHome.onclick = async () => {
+      if (confirm('¿Estás seguro de volver al inicio? Asegúrate de haber presionado "Guardar BD" si hiciste cambios importantes.')) {
+        await this.model.autoSave();
+        this.view.welcomeScreen.style.display = 'flex';
+        if (this.autoSaveInterval) clearInterval(this.autoSaveInterval);
+      }
+    };
   }
 
   bindEvents() {
@@ -80,7 +144,12 @@ class Controller {
     if (success) {
       this.view.hideWelcomeScreen();
       this.refreshView();
+      this.startAutoSave();
       this.view.showToast('📄 Base de datos creada');
+      
+      if (!localStorage.getItem('calificador_tour_seen')) {
+        setTimeout(() => this.tour.start(), 500);
+      }
     } else {
       this.view.showError('Creación de archivo cancelada.');
     }
@@ -93,6 +162,11 @@ class Controller {
         this.view.hideWelcomeScreen();
         this.view.showToast('📂 Archivo cargado con éxito');
         this.refreshView();
+        this.startAutoSave();
+        
+        if (!localStorage.getItem('calificador_tour_seen')) {
+          setTimeout(() => this.tour.start(), 500);
+        }
       } else {
         this.view.showError('Apertura cancelada.');
       }
@@ -110,6 +184,7 @@ class Controller {
       const success = await this.model.saveFile(isSaveAs);
       if (success) {
         this.view.showToast('💾 Cambios guardados correctamente');
+        if (isSaveAs) this.startAutoSave();
       } else {
         this.view.showError('Guardado cancelado.');
       }
@@ -197,5 +272,17 @@ class Controller {
     this.refreshView();
     this.view.showToast('🔄 Clase reiniciada');
     if (this.model.currentFileHandle) this.handleSaveFile(false);
+  }
+
+  startAutoSave() {
+    if (this.autoSaveInterval) clearInterval(this.autoSaveInterval);
+    this.autoSaveInterval = setInterval(async () => {
+      await this.model.autoSave();
+      const indicator = document.getElementById('autoSaveIndicator');
+      if (indicator) {
+        indicator.style.opacity = '1';
+        setTimeout(() => indicator.style.opacity = '0', 2000);
+      }
+    }, 60000);
   }
 }

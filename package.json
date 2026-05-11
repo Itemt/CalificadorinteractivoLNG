@@ -1,6 +1,6 @@
 {
   "name": "calificador-interactivo",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Calificador interactivo para profesores",
   "main": "main.js",
   "scripts": {
@@ -24,7 +24,7 @@
     "win": {
       "target": [
         {
-          "target": "nsis",
+          "target": "portable",
           "arch": [
             "x64",
             "ia32"
@@ -33,14 +33,8 @@
       ],
       "icon": "build/icon.png"
     },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": true,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "Calificador Interactivo",
-      "license": "licencia.txt"
+    "portable": {
+      "splashImage": "build/icon.png"
     },
     "publish": ["github"]
   },

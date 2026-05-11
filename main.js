@@ -3,21 +3,29 @@ const path = require('path');
 const fs = require('fs');
 
 function createWindow () {
-  const mainWindow = new BrowserWindow({
+  const iconPath = path.join(__dirname, 'assets/icon.png');
+  const windowOptions = {
     width: 1280,
     height: 800,
-    icon: path.join(__dirname, 'assets/icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true
     }
-  });
+  };
 
-  mainWindow.setMenuBarVisibility(false);
-  mainWindow.autoHideMenuBar = true;
+  if (fs.existsSync(iconPath)) {
+    windowOptions.icon = iconPath;
+  }
 
-  mainWindow.loadFile('index.html');
+  try {
+    const mainWindow = new BrowserWindow(windowOptions);
+    mainWindow.setMenuBarVisibility(false);
+    mainWindow.autoHideMenuBar = true;
+    mainWindow.loadFile('index.html');
+  } catch (err) {
+    fs.writeFileSync(path.join(app.getPath('desktop'), 'calificador_crash.log'), err.toString());
+  }
 }
 
 app.whenReady().then(() => {

@@ -17,7 +17,12 @@ Una aplicación de escritorio rápida, 100% offline y amigable diseñada para fa
 
 Para instalar el Calificador Interactivo, dirígete a la pestaña de [**Releases**](../../releases/latest) de este repositorio.
 
-1. **Si usas Windows:** Descarga el archivo que termina en `Setup.exe` y ejecútalo.
+### 🛡️ Nota importante para usuarios de Windows (Microsoft Edge / SmartScreen)
+Al ser un software nuevo e independiente, es posible que **Microsoft Edge** o **Windows Defender SmartScreen** muestren una advertencia indicando que "el archivo no se descarga habitualmente" o que "Windows protegió su PC". **Esto es un falso positivo normal** que ocurre con aplicaciones que aún no han pagado un certificado digital comercial.
+* **En Edge:** Haz clic en los tres puntos (...) junto a la descarga > *Mantener* > *Mostrar más* > *Mantener de todos modos*.
+* **En Windows:** Haz clic en *Más información* y luego en *Ejecutar de todas formas*.
+
+1. **Si usas Windows:** Descarga el archivo que termina en `Setup.exe` y ejecútalo (siguiendo las instrucciones de arriba si te sale la advertencia).
 2. **Si usas Mac:** Descarga el archivo que termina en `.dmg`, ábrelo y arrastra el ícono a tu carpeta de Aplicaciones.
 
 ---

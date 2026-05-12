@@ -210,7 +210,7 @@ class View {
         return `<button class="grade-btn ${selCls}" data-idx="${idx}" data-dim="${dim}" data-si="${si}" data-lvl="${lvl}" title="${CONFIG.LEVEL_LABEL[lvl]}">${lvl}</button>`;
       }).join('');
 
-      const dotColor = g ? `dot-${g.toLowerCase()}` : 'dot-empty';
+      const dotColor = g ? `dot-${g.toLowerCase()}` : '';
       return `<div class="session-row">
         <span class="session-dot ${dotColor}" title="Clase ${si + 1}: ${g ? CONFIG.LEVEL_LABEL[g] : 'Sin calificar'}">${si + 1}</span>
         <div class="session-btns">${buttons}</div>
@@ -270,11 +270,11 @@ class View {
       const btnPicker  = document.getElementById('btnPickerSaveName');
       const btnCancel  = document.getElementById('btnCancelSaveName');
 
-      input.value      = defaultName;
-      noteEl.innerHTML = note;
-
-      // Mostrar "Elegir ubicación" solo si el API está disponible
-      btnPicker.style.display = window.showSaveFilePicker ? 'inline-flex' : 'none';
+      input.value             = defaultName;
+      noteEl.innerHTML        = note;
+      noteEl.style.color      = '';
+      btnOk.textContent       = '⬇️ Solo descargar';
+      btnPicker.style.display = 'inline-flex';
 
       modal.style.display = 'flex';
       setTimeout(() => { input.select(); input.focus(); }, 100);
@@ -288,19 +288,36 @@ class View {
         resolve(val);
       };
 
-      // Descarga directa (Firefox sin API)
       btnOk.onclick = () => { const n = input.value.trim(); if (n) done({ type: 'download', name: n }); };
 
-      // Abrir explorador de archivos (si el navegador lo soporta)
       btnPicker.onclick = async () => {
+        const fname = (input.value.trim() || defaultName).replace(/\.csv$/i, '') + '.csv';
         try {
-          const handle = await window.showSaveFilePicker({
-            types: [{ description: 'Base de Datos CSV', accept: { 'text/csv': ['.csv'] } }],
-            suggestedName: (input.value.trim() || defaultName).replace(/\.csv$/i, '') + '.csv'
-          });
-          done({ type: 'handle', handle });
+          if (window.showSaveFilePicker) {
+            const handle = await window.showSaveFilePicker({
+              types: [{ description: 'Base de Datos CSV', accept: { 'text/csv': ['.csv'] } }],
+              suggestedName: fname
+            });
+            done({ type: 'handle', handle });
+          } else if (window.showDirectoryPicker) {
+            const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+            done({ type: 'dirHandle', dirHandle, name: fname });
+          } else {
+            noteEl.style.color = 'var(--orange, #f59e0b)';
+            noteEl.innerHTML =
+              '⚠️ <strong>Firefox no permite elegir la ubicación desde archivos locales.</strong><br>' +
+              'Opciones:<br>' +
+              '&nbsp;&nbsp;• Usa <strong>Chrome</strong> o <strong>Edge</strong> para abrir este archivo<br>' +
+              '&nbsp;&nbsp;• Usa la aplicación <strong>.exe</strong> para elegir la carpeta<br>' +
+              '&nbsp;&nbsp;• Haz clic en <em>⬇️ Solo descargar</em> para guardar en Descargas';
+          }
         } catch (e) {
-          if (e.name !== 'AbortError') this.showError('No se pudo abrir el explorador de archivos.');
+          if (e.name !== 'AbortError') {
+            noteEl.style.color = 'var(--orange, #f59e0b)';
+            noteEl.innerHTML =
+              '⚠️ No se pudo abrir el explorador de archivos.<br>' +
+              'Usa Chrome, Edge o la aplicación .exe. También puedes hacer clic en <em>⬇️ Solo descargar</em>.';
+          }
         }
       };
 

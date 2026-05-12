@@ -2,7 +2,6 @@ class Tour {
   constructor(steps) {
     this.steps = steps;
     this.currentStep = 0;
-    this.currentTarget = null;
     this.highlightEl = null;
     this.buildDOM();
   }
@@ -49,7 +48,6 @@ class Tour {
     this._clearHighlight();
     this.overlay.classList.remove('visible');
     this.tooltip.classList.remove('visible');
-    this.currentTarget = null;
   }
 
   prev() {
@@ -72,8 +70,6 @@ class Tour {
     const target = document.querySelector(step.target);
 
     if (!target) { this.next(); return; }
-
-    this.currentTarget = target;
 
     document.getElementById('tour-title').textContent = step.title;
     document.getElementById('tour-text').textContent  = step.text;
@@ -116,8 +112,7 @@ class Tour {
     const pad = 6;
     const gap = 14;
     const margin = 16;
-    const rect  = this._contentRect(target);   // ← usa el rect del contenido
-    const fullRect = target.getBoundingClientRect(); // para el tooltip
+    const rect  = this._contentRect(target);
     const vw = window.innerWidth;
     const vh = window.innerHeight;
 

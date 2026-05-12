@@ -321,39 +321,64 @@ class Model {
       localStorage.setItem('calificador_session_name', this.sessionName || defaultName);
 
     } else {
-      // === MODO FIREFOX / BROWSER SIN FILE API ===
-      if (isSaveAs || !this.currentFileHandle) {
-        if (!this.onRequestFilename) return false;
-        const note = '⚠️ Tu navegador no permite elegir la ubicación directamente.<br>El archivo se descargará a tu carpeta de <strong>Descargas</strong>.<br><span style="font-size:0.8rem">Para elegir la ubicación activa en Firefox:<br><em>Ajustes → General → Descargas → "Preguntar dónde guardar cada archivo"</em></span>';
-        const result = await this.onRequestFilename(defaultName, note);
-        if (!result) return false;
+      // === MODO BROWSER SIN showSaveFilePicker (Firefox, etc.) ===
 
-        if (result.type === 'handle') {
-          // El usuario eligió ubicación con el file picker
-          this.currentFileHandle = result.handle;
-          this.sessionName = result.handle.name;
+      // Si ya tenemos un FileSystemFileHandle real (de un directoryPicker previo), escribir directo
+      if (!isSaveAs && this.currentFileHandle && typeof this.currentFileHandle !== 'string' && this.currentFileHandle.createWritable) {
+        try {
           const writable = await this.currentFileHandle.createWritable();
           await writable.write(csvStr);
           await writable.close();
           localStorage.setItem('calificador_session_data', csvStr);
-          localStorage.setItem('calificador_session_name', this.sessionName);
+          localStorage.setItem('calificador_session_name', this.sessionName || defaultName);
           return true;
-        }
+        } catch(e) { /* permiso expiró, abrir diálogo */ }
+      }
 
-        // Descarga directa
-        const nombre = result.name;
-        this.sessionName = nombre.endsWith('.csv') ? nombre : nombre + '.csv';
-        this.currentFileHandle = 'browser_session';
-        this._browserDownload(csvStr, this.sessionName);
-      } else {
-        // Guardados subsecuentes: solo localStorage, sin descarga
+      // Solo localStorage si hay sesión activa y no es SaveAs
+      if (!isSaveAs && typeof this.currentFileHandle === 'string') {
         localStorage.setItem('calificador_session_data', csvStr);
         localStorage.setItem('calificador_session_name', this.sessionName || defaultName);
         return true;
       }
-      // Guardar en localStorage
+
+      // Necesitamos elegir ubicación — mostrar modal
+      if (!this.onRequestFilename) return false;
+      const result = await this.onRequestFilename(defaultName);
+      if (!result) return false;
+
+      if (result.type === 'handle') {
+        // showSaveFilePicker (si Firefox lo soporta en el futuro)
+        this.currentFileHandle = result.handle;
+        this.sessionName = result.handle.name;
+        const writable = await this.currentFileHandle.createWritable();
+        await writable.write(csvStr);
+        await writable.close();
+        localStorage.setItem('calificador_session_data', csvStr);
+        localStorage.setItem('calificador_session_name', this.sessionName);
+        return true;
+      }
+
+      if (result.type === 'dirHandle') {
+        // showDirectoryPicker (Firefox 111+)
+        const fileHandle = await result.dirHandle.getFileHandle(result.name, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(csvStr);
+        await writable.close();
+        this.currentFileHandle = fileHandle;
+        this.sessionName = result.name;
+        localStorage.setItem('calificador_session_data', csvStr);
+        localStorage.setItem('calificador_session_name', result.name);
+        return true;
+      }
+
+      // Descarga directa (fallback)
+      const nombre = result.name || defaultName;
+      this.sessionName = nombre.endsWith('.csv') ? nombre : nombre + '.csv';
+      this.currentFileHandle = 'browser_session';
+      this._browserDownload(csvStr, this.sessionName);
       localStorage.setItem('calificador_session_data', csvStr);
-      localStorage.setItem('calificador_session_name', this.sessionName || defaultName);
+      localStorage.setItem('calificador_session_name', this.sessionName);
     }
     return true;
   }

@@ -355,6 +355,8 @@ class View {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
+    if (this.confettiFrame) cancelAnimationFrame(this.confettiFrame);
+
     const colors = ['#ffd700', '#ff6b9d', '#4fc3f7', '#7c4dff', '#00e676', '#ff9800'];
     const pieces = Array.from({ length: 90 }, () => ({
       x: Math.random() * canvas.width,
@@ -367,8 +369,7 @@ class View {
       rotSpeed: (Math.random() - 0.5) * 0.2
     }));
 
-    let frame;
-    function draw() {
+    const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       let allOff = true;
       pieces.forEach(p => {
@@ -379,10 +380,9 @@ class View {
         ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 0.4);
         ctx.restore();
       });
-      if (!allOff) frame = requestAnimationFrame(draw);
-      else ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-    if (frame) cancelAnimationFrame(frame);
+      if (!allOff) this.confettiFrame = requestAnimationFrame(draw);
+      else { ctx.clearRect(0, 0, canvas.width, canvas.height); this.confettiFrame = null; }
+    };
     draw();
   }
 }

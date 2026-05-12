@@ -541,11 +541,6 @@ td.col-dim-cell {
 /* ===================================================
    TOTAL CELL (right column)
    =================================================== */
-.total-empty-wrap {
-  background: var(--surface);
-  border: 2px dashed var(--border);
-}
-.total-emoji { font-size: 1.4rem; line-height: 1; }
 .total-word {
   font-size: .9rem;
   font-weight: 900;

@@ -271,7 +271,7 @@ class Controller {
     }
     
     if (this.model.currentFileHandle) {
-      this.model.saveFile(false).catch(console.error); // Silent auto-save
+      this.model.saveFile(false).catch(() => {}); // Silent auto-save
     }
   }
 

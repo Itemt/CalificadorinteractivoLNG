@@ -84,6 +84,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
+
 body {
   font-family: 'Nunito', sans-serif;
   background: var(--bg);
@@ -112,7 +113,6 @@ body {
 .theme-toggle {
   position: absolute;
   top: 16px;
-  right: 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--white);
@@ -128,14 +128,18 @@ body {
   font-weight: 700;
   cursor: pointer;
   z-index: 10;
-  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
   white-space: nowrap;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  transition: transform var(--transition), box-shadow var(--transition);
 }
 .theme-toggle:hover {
   transform: translateY(-1px);
   border-color: var(--accent);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
 }
+#homeToggle  { left: 20px; }
+#tourToggle  { right: 16px; }
+#themeToggle { right: 155px; }
 .hero-content { position: relative; z-index: 1; }
 .hero-icon {
   font-size: 3rem;
@@ -201,7 +205,7 @@ body {
   font-size: .9rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: transform var(--transition);
 }
 .tab:hover { border-color: var(--accent); color: var(--white); transform: translateY(-2px); }
 .tab.active {
@@ -238,7 +242,7 @@ body {
   font-weight: 700;
   color: var(--muted);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: transform var(--transition);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -352,7 +356,7 @@ th.col-total { width: 14%; }
   font-size: 0.58rem;
   font-weight: 900;
   cursor: pointer;
-  transition: transform var(--transition), background var(--transition), border-color var(--transition), color var(--transition);
+  transition: transform var(--transition);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -368,7 +372,6 @@ th.col-total { width: 14%; }
 
 tbody tr {
   border-bottom: 1px solid var(--border);
-  transition: background-color var(--transition);
 }
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: var(--row-hover); }
@@ -446,7 +449,7 @@ td.col-dim-cell {
   border: 2px solid var(--border);
   color: var(--muted);
   background: var(--surface);
-  transition: background var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition);
+  transition: none;
 }
 .session-dot.dot-s { background: var(--s-bg); border-color: var(--s-color); color: var(--s-text); }
 .session-dot.dot-a { background: var(--a-bg); border-color: var(--a-color); color: #fff; }
@@ -469,7 +472,7 @@ td.col-dim-cell {
   font-size: .65rem;
   font-weight: 900;
   cursor: pointer;
-  transition: transform var(--transition), background var(--transition), border-color var(--transition), color var(--transition);
+  transition: transform var(--transition);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -629,7 +632,7 @@ td.col-dim-cell {
   font-size: .88rem;
   font-weight: 800;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: transform var(--transition), box-shadow var(--transition);
 }
 .btn-export {
   background: linear-gradient(135deg, #7c4dff, #b47aff);
@@ -713,7 +716,7 @@ td.col-dim-cell {
 .welcome-actions { display: flex; flex-direction: column; gap: 15px; margin-top: 30px; }
 .btn-welcome {
   padding: 15px; font-size: 1.1rem; border-radius: var(--radius-sm); border: 2px solid var(--border);
-  background: var(--bg); color: var(--white); cursor: pointer; font-weight: 800; transition: all var(--transition);
+  background: var(--bg); color: var(--white); cursor: pointer; font-weight: 800; transition: transform var(--transition);
 }
 .btn-welcome:hover { border-color: var(--accent); transform: translateY(-2px); }
 .btn-welcome.primary { background: linear-gradient(135deg, #7c4dff, #b47aff); border: none; color: #fff; }
@@ -728,7 +731,7 @@ td.col-dim-cell {
 }
 .form-group input:focus, .form-group textarea:focus { border-color: var(--accent); outline: none; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; }
-.btn-cancel, .btn-save { padding: 10px 20px; border-radius: 999px; font-weight: 800; cursor: pointer; border: none; font-size: .9rem; transition: all var(--transition); }
+.btn-cancel, .btn-save { padding: 10px 20px; border-radius: 999px; font-weight: 800; cursor: pointer; border: none; font-size: .9rem; transition: transform var(--transition), box-shadow var(--transition); }
 .btn-cancel { background: transparent; color: var(--muted); border: 2px solid var(--border); }
 .btn-cancel:hover { background: var(--border); color: var(--white); }
 .btn-save { background: var(--accent); color: #fff; }
@@ -750,14 +753,12 @@ td.col-dim-cell {
 }
 #tour-overlay.visible { display: block; opacity: 1; }
 
-.tour-highlight {
-  position: relative !important;
-  z-index: 10001 !important;
-  pointer-events: none !important;
-  background: var(--bg) !important;
-  border-radius: var(--radius-sm);
-  box-shadow: 0 0 0 4px var(--accent), 0 0 30px rgba(124, 77, 255, 0.5) !important;
-  transition: all 0.3s ease;
+.tour-highlight-box {
+  position: fixed;
+  border-radius: 10px;
+  box-shadow: 0 0 0 3px var(--accent), 0 0 24px rgba(124, 77, 255, 0.45);
+  pointer-events: none;
+  z-index: 10001;
 }
 
 #tour-tooltip {
@@ -782,7 +783,7 @@ td.col-dim-cell {
 .tour-btn-skip:hover { color: var(--s-color); }
 
 .tour-nav { display: flex; gap: 8px; }
-.tour-btn { padding: 8px 14px; border: none; border-radius: 999px; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: all var(--transition); }
+.tour-btn { padding: 8px 14px; border: none; border-radius: 999px; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: transform var(--transition), box-shadow var(--transition); }
 .tour-btn.prev { background: transparent; border: 2px solid var(--border); color: var(--muted); }
 .tour-btn.prev:hover { background: var(--border); color: var(--white); }
 .tour-btn.next { background: var(--accent); color: #fff; }

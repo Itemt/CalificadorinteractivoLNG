@@ -323,15 +323,27 @@ class Model {
     } else {
       // === MODO FIREFOX / BROWSER SIN FILE API ===
       if (isSaveAs || !this.currentFileHandle) {
-        // Pedir nombre de archivo la primera vez
-        const nombre = prompt(
-          '💾 ¿Cómo quieres llamar a tu base de datos?\n(El archivo se descargará y se recuperará automáticamente al reabrir la app)',
-          defaultName
-        );
-        if (nombre === null) return false; // usuario canceló
+        if (!this.onRequestFilename) return false;
+        const note = '⚠️ Tu navegador no permite elegir la ubicación directamente.<br>El archivo se descargará a tu carpeta de <strong>Descargas</strong>.<br><span style="font-size:0.8rem">Para elegir la ubicación activa en Firefox:<br><em>Ajustes → General → Descargas → "Preguntar dónde guardar cada archivo"</em></span>';
+        const result = await this.onRequestFilename(defaultName, note);
+        if (!result) return false;
+
+        if (result.type === 'handle') {
+          // El usuario eligió ubicación con el file picker
+          this.currentFileHandle = result.handle;
+          this.sessionName = result.handle.name;
+          const writable = await this.currentFileHandle.createWritable();
+          await writable.write(csvStr);
+          await writable.close();
+          localStorage.setItem('calificador_session_data', csvStr);
+          localStorage.setItem('calificador_session_name', this.sessionName);
+          return true;
+        }
+
+        // Descarga directa
+        const nombre = result.name;
         this.sessionName = nombre.endsWith('.csv') ? nombre : nombre + '.csv';
         this.currentFileHandle = 'browser_session';
-        // Primera vez: descargar el archivo
         this._browserDownload(csvStr, this.sessionName);
       } else {
         // Guardados subsecuentes: solo localStorage, sin descarga

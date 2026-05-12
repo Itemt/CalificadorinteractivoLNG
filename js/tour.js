@@ -2,11 +2,12 @@ class Tour {
   constructor(steps) {
     this.steps = steps;
     this.currentStep = 0;
+    this.currentTarget = null;
+    this.highlightEl = null;
     this.buildDOM();
   }
 
   buildDOM() {
-    // Reutiliza el DOM si ya existe (evita duplicados de IDs)
     this.overlay = document.getElementById('tour-overlay');
     if (!this.overlay) {
       this.overlay = document.createElement('div');
@@ -45,95 +46,117 @@ class Tour {
   }
 
   end() {
+    this._clearHighlight();
     this.overlay.classList.remove('visible');
     this.tooltip.classList.remove('visible');
-    if (this.currentTarget) {
-      this.currentTarget.classList.remove('tour-highlight');
-      this.currentTarget = null;
-    }
-    localStorage.setItem('calificador_tour_seen', 'true');
+    this.currentTarget = null;
   }
 
   prev() {
-    if (this.currentStep > 0) {
-      this.currentStep--;
-      this.showStep();
-    }
+    if (this.currentStep > 0) { this.currentStep--; this.showStep(); }
   }
 
   next() {
-    if (this.currentStep < this.steps.length - 1) {
-      this.currentStep++;
-      this.showStep();
-    } else {
-      this.end();
-    }
+    if (this.currentStep < this.steps.length - 1) { this.currentStep++; this.showStep(); }
+    else this.end();
+  }
+
+  _clearHighlight() {
+    if (this.highlightEl) { this.highlightEl.remove(); this.highlightEl = null; }
   }
 
   showStep() {
-    if (this.currentTarget) {
-      this.currentTarget.classList.remove('tour-highlight');
-    }
-    
-    const step = this.steps[this.currentStep];
+    this._clearHighlight();
+
+    const step   = this.steps[this.currentStep];
     const target = document.querySelector(step.target);
-    
-    if (!target) {
-      this.next();
-      return;
-    }
+
+    if (!target) { this.next(); return; }
 
     this.currentTarget = target;
-    target.classList.add('tour-highlight');
 
     document.getElementById('tour-title').textContent = step.title;
-    document.getElementById('tour-text').textContent = step.text;
-    
-    document.getElementById('tour-btn-prev').style.display = this.currentStep === 0 ? 'none' : 'block';
-    document.getElementById('tour-btn-next').textContent = this.currentStep === this.steps.length - 1 ? '¡Empezar!' : 'Siguiente';
+    document.getElementById('tour-text').textContent  = step.text;
+    document.getElementById('tour-btn-prev').style.display =
+      this.currentStep === 0 ? 'none' : 'block';
+    document.getElementById('tour-btn-next').textContent =
+      this.currentStep === this.steps.length - 1 ? '¡Empezar!' : 'Siguiente';
 
-    // Measure tooltip
-    this.tooltip.style.display = 'block';
-    const tooltipW = this.tooltip.offsetWidth;
-    const tooltipH = this.tooltip.offsetHeight;
-    this.tooltip.style.display = '';
+    // Scroll al elemento y posicionar después
+    target.scrollIntoView({ behavior: 'instant', block: 'nearest' });
 
+    requestAnimationFrame(() => this._positionAll(target));
+  }
+
+  // Devuelve el rect del elemento; si es muy ancho, usa el rect de sus hijos
+  _contentRect(target) {
     const rect = target.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const pad = 16;
-    const gap = 12;
-    const isWide = rect.width > vw * 0.7;
+    const vw   = window.innerWidth;
 
-    // Vertically centered on the target element by default
-    let top = rect.top + (rect.height / 2) - (tooltipH / 2);
-
-    // Prefer RIGHT side; fallback to LEFT
-    let left;
-    const spaceRight = vw - rect.right;
-    const spaceLeft  = rect.left;
-
-    if (!isWide && spaceRight >= tooltipW + gap) {
-      left = rect.right + gap;
-    } else if (!isWide && spaceLeft >= tooltipW + gap) {
-      left = rect.left - tooltipW - gap;
-    } else {
-      // Element is too wide or no side space: Go ABOVE or BELOW
-      left = (vw / 2) - (tooltipW / 2);
-      if (rect.top > tooltipH + gap) {
-        top = rect.top - tooltipH - gap;
-      } else {
-        top = rect.bottom + gap;
+    if (rect.width > vw * 0.75 && target.children.length > 0) {
+      let minL = Infinity, maxR = -Infinity, minT = Infinity, maxB = -Infinity;
+      Array.from(target.children).forEach(ch => {
+        const cr = ch.getBoundingClientRect();
+        if (cr.width > 0 && cr.height > 0) {
+          minL = Math.min(minL, cr.left);
+          maxR = Math.max(maxR, cr.right);
+          minT = Math.min(minT, cr.top);
+          maxB = Math.max(maxB, cr.bottom);
+        }
+      });
+      if (minL !== Infinity) {
+        return { left: minL, top: minT, right: maxR, bottom: maxB,
+                 width: maxR - minL, height: maxB - minT };
       }
     }
+    return rect;
+  }
 
-    // Clamp both axes inside viewport
-    top  = Math.max(pad, Math.min(top,  vh - tooltipH - pad));
-    left = Math.max(pad, Math.min(left, vw - tooltipW - pad));
+  _positionAll(target) {
+    const pad = 6;
+    const gap = 14;
+    const margin = 16;
+    const rect  = this._contentRect(target);   // ← usa el rect del contenido
+    const fullRect = target.getBoundingClientRect(); // para el tooltip
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
 
-    this.tooltip.style.top  = top  + 'px';
-    this.tooltip.style.left = left + 'px';
-    
-    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // ── Highlight box ─────────────────────────────────────────────
+    this.highlightEl = document.createElement('div');
+    this.highlightEl.className = 'tour-highlight-box';
+    this.highlightEl.style.top    = `${rect.top    - pad}px`;
+    this.highlightEl.style.left   = `${rect.left   - pad}px`;
+    this.highlightEl.style.width  = `${rect.width  + pad * 2}px`;
+    this.highlightEl.style.height = `${rect.height + pad * 2}px`;
+    document.body.appendChild(this.highlightEl);
+
+    // ── Tooltip position ──────────────────────────────────────────
+    this.tooltip.style.visibility = 'hidden';
+    this.tooltip.style.display    = 'block';
+    const tw = this.tooltip.offsetWidth;
+    const th = this.tooltip.offsetHeight;
+    this.tooltip.style.visibility = '';
+
+    const spaceRight = vw - rect.right;
+    const spaceLeft  = rect.left;
+    const isWide     = rect.width > vw * 0.65;
+
+    let top  = rect.top + rect.height / 2 - th / 2;
+    let left;
+
+    if (!isWide && spaceRight >= tw + gap) {
+      left = rect.right + gap + pad;
+    } else if (!isWide && spaceLeft >= tw + gap) {
+      left = rect.left - tw - gap - pad;
+    } else {
+      left = vw / 2 - tw / 2;
+      top  = rect.top > th + gap ? rect.top - th - gap - pad : rect.bottom + gap + pad;
+    }
+
+    top  = Math.max(margin, Math.min(top,  vh - th - margin));
+    left = Math.max(margin, Math.min(left, vw - tw - margin));
+
+    this.tooltip.style.top  = `${top}px`;
+    this.tooltip.style.left = `${left}px`;
   }
 }

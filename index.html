@@ -51,6 +51,23 @@ Carlos Gómez
     </div>
   </div>
 
+  <!-- ===== SAVE NAME MODAL (Firefox fallback) ===== -->
+  <div id="saveNameModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <h3>💾 Guardar Base de Datos</h3>
+      <p id="saveNameModalNote" style="color:var(--muted); font-size:0.85rem; line-height:1.5; margin-top:10px;"></p>
+      <div class="form-group">
+        <label>Nombre del archivo</label>
+        <input type="text" id="saveNameInput" />
+      </div>
+      <div class="modal-actions" style="flex-wrap:wrap; gap:8px;">
+        <button id="btnCancelSaveName" class="btn-cancel">Cancelar</button>
+        <button id="btnPickerSaveName" class="btn-save" style="background:var(--surface); color:var(--accent); border:2px solid var(--accent);">📁 Elegir ubicación</button>
+        <button id="btnConfirmSaveName" class="btn-save">⬇️ Descargar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== RENAME CLASS MODAL ===== -->
   <div id="renameClassModal" class="modal-overlay" style="display:none;">
     <div class="modal-card">
@@ -70,10 +87,10 @@ Carlos Gómez
   <!-- ===== HERO HEADER ===== -->
   <header class="hero">
     <div class="hero-glow"></div>
-    <button class="theme-toggle" id="homeToggle" title="Volver al Inicio" style="left: 20px; right: auto; font-size: 0.85rem; font-weight: bold; width: auto; padding: 0 15px; border-radius: 20px; height: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); gap: 6px;"><span>🏠</span> Cerrar / Crear Nuevo</button>
+    <button class="theme-toggle" id="homeToggle" title="Volver al Inicio"><span>🏠</span> Cerrar / Crear Nuevo</button>
     <div id="autoSaveIndicator" style="position:absolute; top:26px; left:230px; color:var(--s-color); font-size:0.85rem; font-weight:800; opacity:0; transition:opacity 0.5s;">☁️ Autoguardando...</div>
-    <button class="theme-toggle" id="themeToggle" title="Cambiar tema">☀️</button>
-    <button class="theme-toggle" id="tourToggle" title="Repetir el Tour" style="right: 70px; font-size: 0.85rem; font-weight: bold; width: auto; padding: 0 15px; border-radius: 20px; height: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); gap: 6px;"><span>❓</span> Tour Guiado</button>
+    <button class="theme-toggle" id="tourToggle" title="Repetir el Tour"><span>❓</span> Tour Guiado</button>
+    <button class="theme-toggle" id="themeToggle" title="Cambiar tema">☀️ Modo Claro</button>
     <div class="hero-content">
       <div class="hero-icon">🎓</div>
       <h1>Calificador Interactivo LNG</h1>

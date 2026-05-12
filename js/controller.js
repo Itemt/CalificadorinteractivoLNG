@@ -35,10 +35,10 @@ class Controller {
       }
     }
     
-    this.initTour();
+    this.initTour(!lastPath);
   }
 
-  initTour() {
+  initTour(showWelcomeTour = false) {
     // Pasos en la pantalla de bienvenida (solo cuando la bienvenida está visible)
     this.welcomeSteps = [
       {
@@ -98,22 +98,23 @@ class Controller {
       }
     };
 
-    // Auto-inicia el tour de bienvenida solo en la primera visita
-    if (!localStorage.getItem('calificador_tour_seen')) {
+    // Muestra el tour de bienvenida si no hay archivo guardado para continuar
+    if (showWelcomeTour) {
       const welcomeTour = new Tour(this.welcomeSteps);
       setTimeout(() => welcomeTour.start(), 500);
     }
   }
 
-  // Solo se auto-dispara una vez (primera creación de archivo)
   startAppTour() {
-    if (localStorage.getItem('calificador_app_tour_seen') === 'true') return;
-    localStorage.setItem('calificador_app_tour_seen', 'true');
     const appTour = new Tour(this.appSteps);
     setTimeout(() => appTour.start(), 700);
   }
 
   bindEvents() {
+    // Callback para pedir nombre de archivo en Firefox (evita prompt() nativo)
+    this.model.onRequestFilename = (defaultName, note) =>
+      this.view.showSaveNameModal(defaultName, note);
+
     // Rename class callback (siempre activo)
     this.view.onRenameClass = (id, newName) => {
       if (this.model.renameClass(id, newName)) {
@@ -203,7 +204,6 @@ class Controller {
         this.view.showToast('📂 Archivo cargado con éxito');
         this.refreshView();
         this.startAutoSave();
-        this.startAppTour();
       } else {
         this.view.showError('Apertura cancelada.');
       }

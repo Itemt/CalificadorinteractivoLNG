@@ -261,6 +261,57 @@ class View {
     document.getElementById('countTotal').textContent = stats.total;
   }
 
+  showSaveNameModal(defaultName, note = '') {
+    return new Promise((resolve) => {
+      const modal      = document.getElementById('saveNameModal');
+      const input      = document.getElementById('saveNameInput');
+      const noteEl     = document.getElementById('saveNameModalNote');
+      const btnOk      = document.getElementById('btnConfirmSaveName');
+      const btnPicker  = document.getElementById('btnPickerSaveName');
+      const btnCancel  = document.getElementById('btnCancelSaveName');
+
+      input.value      = defaultName;
+      noteEl.innerHTML = note;
+
+      // Mostrar "Elegir ubicación" solo si el API está disponible
+      btnPicker.style.display = window.showSaveFilePicker ? 'inline-flex' : 'none';
+
+      modal.style.display = 'flex';
+      setTimeout(() => { input.select(); input.focus(); }, 100);
+
+      const done = (val) => {
+        modal.style.display  = 'none';
+        btnOk.onclick        = null;
+        btnPicker.onclick    = null;
+        btnCancel.onclick    = null;
+        input.onkeydown      = null;
+        resolve(val);
+      };
+
+      // Descarga directa (Firefox sin API)
+      btnOk.onclick = () => { const n = input.value.trim(); if (n) done({ type: 'download', name: n }); };
+
+      // Abrir explorador de archivos (si el navegador lo soporta)
+      btnPicker.onclick = async () => {
+        try {
+          const handle = await window.showSaveFilePicker({
+            types: [{ description: 'Base de Datos CSV', accept: { 'text/csv': ['.csv'] } }],
+            suggestedName: (input.value.trim() || defaultName).replace(/\.csv$/i, '') + '.csv'
+          });
+          done({ type: 'handle', handle });
+        } catch (e) {
+          if (e.name !== 'AbortError') this.showError('No se pudo abrir el explorador de archivos.');
+        }
+      };
+
+      btnCancel.onclick = () => done(null);
+      input.onkeydown   = (e) => {
+        if (e.key === 'Enter')  btnOk.click();
+        if (e.key === 'Escape') done(null);
+      };
+    });
+  }
+
   showToast(msg) {
     let t = document.querySelector('.toast');
     if (!t) { 

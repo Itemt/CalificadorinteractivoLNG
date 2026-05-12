@@ -32,21 +32,37 @@
   <!-- ===== ADD CLASS MODAL ===== -->
   <div id="addClassModal" class="modal-overlay" style="display:none;">
     <div class="modal-card">
-      <h3>➕ Agregar Grado/Clase</h3>
+      <h3>➕ Agregar Materia / Grado</h3>
       <div class="form-group">
-        <label>Nombre de la Clase (Ej: Cuarto B)</label>
+        <label>Nombre de la Materia (Ej: Informática, Cuarto B)</label>
         <input type="text" id="newClassName" placeholder="Nombre visible..." />
       </div>
       <div class="form-group">
-        <label>Lista de Estudiantes (Presiona Enter después de cada nombre)</label>
+        <label>Lista de Estudiantes (Un nombre por línea, presiona Enter entre cada uno)</label>
         <textarea id="newClassStudents" rows="6" placeholder="Juan Pérez
 Ana López
 Carlos Gómez
 ..."></textarea>
       </div>
       <div class="modal-actions">
-        <button onclick="document.getElementById('addClassModal').style.display='none'" class="btn-cancel">Cancelar</button>
-        <button onclick="saveNewClass()" class="btn-save">Guardar Clase</button>
+        <button id="btnCancelAddClass" class="btn-cancel">Cancelar</button>
+        <button id="btnSaveNewClass" class="btn-save">Guardar Materia</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RENAME CLASS MODAL ===== -->
+  <div id="renameClassModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <h3>✏️ Renombrar Materia</h3>
+      <input type="hidden" id="renameClassId" />
+      <div class="form-group">
+        <label>Nuevo nombre de la materia</label>
+        <input type="text" id="renameClassNameInput" placeholder="Nombre de la materia..." />
+      </div>
+      <div class="modal-actions">
+        <button id="btnCancelRename" class="btn-cancel">Cancelar</button>
+        <button id="btnConfirmRename" class="btn-save">Guardar</button>
       </div>
     </div>
   </div>
@@ -113,39 +129,50 @@ Carlos Gómez
           <tr>
             <th class="col-student">👤 Estudiante</th>
             <th class="col-dim">
-              <div class="dim-title" style="font-size: 0.8rem;">📚 C. Cognitivo (Conceptos)</div>
+              <div class="dim-title">📚 C. Cognitivo</div>
               <div class="session-row header-actions" style="border:none;">
-                <span style="width: 22px; flex-shrink: 0;"></span>
+                <span style="width:16px;flex-shrink:0;"></span>
                 <div class="session-btns">
-                  <button onclick="fillAll('conceptos', 'P')" class="h-btn h-p" title="Asignar En Proceso a la primera sesión vacía">P ⬇</button>
-                  <button onclick="fillAll('conceptos', 'A')" class="h-btn h-a" title="Asignar Alto a la primera sesión vacía">A ⬇</button>
-                  <button onclick="fillAll('conceptos', 'S')" class="h-btn h-s" title="Asignar Superior a la primera sesión vacía">S ⬇</button>
+                  <button class="h-btn h-p" data-dim="conceptos" data-lvl="P" title="En Proceso">P ⬇</button>
+                  <button class="h-btn h-a" data-dim="conceptos" data-lvl="A" title="Alto">A ⬇</button>
+                  <button class="h-btn h-s" data-dim="conceptos" data-lvl="S" title="Superior">S ⬇</button>
                 </div>
               </div>
             </th>
             <th class="col-dim">
-              <div class="dim-title" style="font-size: 0.8rem;">🛠️ C. Praxiológico (Práctica)</div>
+              <div class="dim-title">🛠️ C. Praxiológico</div>
               <div class="session-row header-actions" style="border:none;">
-                <span style="width: 22px; flex-shrink: 0;"></span>
+                <span style="width:16px;flex-shrink:0;"></span>
                 <div class="session-btns">
-                  <button onclick="fillAll('practica', 'P')" class="h-btn h-p" title="Asignar En Proceso a la primera sesión vacía">P ⬇</button>
-                  <button onclick="fillAll('practica', 'A')" class="h-btn h-a" title="Asignar Alto a la primera sesión vacía">A ⬇</button>
-                  <button onclick="fillAll('practica', 'S')" class="h-btn h-s" title="Asignar Superior a la primera sesión vacía">S ⬇</button>
+                  <button class="h-btn h-p" data-dim="practica" data-lvl="P" title="En Proceso">P ⬇</button>
+                  <button class="h-btn h-a" data-dim="practica" data-lvl="A" title="Alto">A ⬇</button>
+                  <button class="h-btn h-s" data-dim="practica" data-lvl="S" title="Superior">S ⬇</button>
                 </div>
               </div>
             </th>
             <th class="col-dim">
-              <div class="dim-title" style="font-size: 0.8rem;">🤝 C. Axiológico (Comportamiento)</div>
+              <div class="dim-title">🤝 C. Axiológico</div>
               <div class="session-row header-actions" style="border:none;">
-                <span style="width: 22px; flex-shrink: 0;"></span>
+                <span style="width:16px;flex-shrink:0;"></span>
                 <div class="session-btns">
-                  <button onclick="fillAll('comportamiento', 'P')" class="h-btn h-p" title="Asignar En Proceso a la primera sesión vacía">P ⬇</button>
-                  <button onclick="fillAll('comportamiento', 'A')" class="h-btn h-a" title="Asignar Alto a la primera sesión vacía">A ⬇</button>
-                  <button onclick="fillAll('comportamiento', 'S')" class="h-btn h-s" title="Asignar Superior a la primera sesión vacía">S ⬇</button>
+                  <button class="h-btn h-p" data-dim="comportamiento" data-lvl="P" title="En Proceso">P ⬇</button>
+                  <button class="h-btn h-a" data-dim="comportamiento" data-lvl="A" title="Alto">A ⬇</button>
+                  <button class="h-btn h-s" data-dim="comportamiento" data-lvl="S" title="Superior">S ⬇</button>
                 </div>
               </div>
             </th>
-            <th class="col-total">🏆 Valoración</th>
+            <th class="col-dim">
+              <div class="dim-title">🙋 Autoevaluación</div>
+              <div class="session-row header-actions" style="border:none;">
+                <span style="width:16px;flex-shrink:0;"></span>
+                <div class="session-btns">
+                  <button class="h-btn h-p" data-dim="autoevaluacion" data-lvl="P" title="En Proceso">P ⬇</button>
+                  <button class="h-btn h-a" data-dim="autoevaluacion" data-lvl="A" title="Alto">A ⬇</button>
+                  <button class="h-btn h-s" data-dim="autoevaluacion" data-lvl="S" title="Superior">S ⬇</button>
+                </div>
+              </div>
+            </th>
+            <th class="col-total">⭐ Valoración / 📋 Trimestre</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>

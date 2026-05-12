@@ -13,7 +13,13 @@ class Controller {
       const btnContinue = document.getElementById('btnContinueLast');
       if (btnContinue) {
         btnContinue.style.display = 'block';
-        const fileName = lastPath.split('/').pop().split('\\').pop();
+        // lastPath puede ser ruta de archivo o 'browser_session:nombre'
+        let fileName;
+        if (lastPath.startsWith('browser_session:')) {
+          fileName = lastPath.replace('browser_session:', '');
+        } else {
+          fileName = lastPath.split('/').pop().split('\\').pop();
+        }
         btnContinue.textContent = `🔄 Continuar con: ${fileName}`;
         btnContinue.onclick = async () => {
           const loaded = await this.model.loadLastFile();
@@ -33,34 +39,54 @@ class Controller {
   }
 
   initTour() {
-    const steps = [
+    // Pasos en la pantalla de bienvenida (solo cuando la bienvenida está visible)
+    this.welcomeSteps = [
+      {
+        target: '.welcome-card',
+        title: '🎓 Bienvenido al Calificador LNG',
+        text: 'Esta es tu pantalla de inicio. Desde aquí puedes crear una nueva base de datos o abrir una que ya tengas guardada.'
+      },
+      {
+        target: '#btnNewFile',
+        title: '📄 Crear Archivo Nuevo',
+        text: 'Haz clic aquí para crear tu primera base de datos. Se guardará como un archivo .csv en tu computadora donde elijas.'
+      },
+      {
+        target: '#btnOpenFile',
+        title: '📂 Abrir Base de Datos',
+        text: 'Si ya tienes un archivo guardado de una clase anterior, úsalo aquí para continuar donde lo dejaste.'
+      }
+    ];
+
+    // Pasos dentro de la app
+    this.appSteps = [
       {
         target: '#classTabs',
-        title: 'Tus Clases',
-        text: 'Comienza aquí creando tus clases y pegando tu lista de estudiantes. Cada pestaña es una clase distinta.'
+        title: '🏫 Tus Materias',
+        text: 'Aquí aparecerán todas las materias o clases que crees. Usa el botón "Agregar Materia" para añadir nuevas.'
       },
       {
         target: '.header-actions',
-        title: 'Calificación Rápida',
-        text: 'Califica a toda tu clase de una vez utilizando estos botones de flecha. Llenarán automáticamente las casillas vacías.'
+        title: '⚡ Calificación Rápida',
+        text: 'Estos botones P/A/S llenan automáticamente la primera casilla vacía de toda la clase de golpe. ¡Muy útil!'
       },
       {
         target: '.period-tabs',
-        title: 'Periodos de Tiempo',
-        text: 'Avanza en el tiempo escolar. Cada nivel (Inicial, Básico...) representa 3 semanas de historial de notas independiente.'
+        title: '⏳ Periodos de Tiempo',
+        text: 'Cada nivel (Inicial, Básico, Nivel Alto, Superior) tiene su propio historial de notas independiente.'
       },
       {
         target: '.action-row',
-        title: 'Exportar y Guardar',
-        text: 'Tus datos se autoguardan cada minuto, pero aquí puedes exportar una copia o copiar las notas al portapapeles.'
+        title: '💾 Guardar y Exportar',
+        text: 'Tus datos se autoguardan cada minuto. Aquí puedes guardar manualmente, exportar a CSV o copiar el resumen al portapapeles.'
       }
     ];
-    this.tour = new Tour(steps);
-    
+
+    // Botón Tour Guiado (visible en la app): siempre ejecuta el tour de la app
     const btnTour = document.getElementById('tourToggle');
     if (btnTour) btnTour.onclick = () => {
-      this.view.hideWelcomeScreen();
-      this.tour.start();
+      const appTour = new Tour(this.appSteps);
+      appTour.start();
     };
 
     const btnHome = document.getElementById('homeToggle');
@@ -71,9 +97,32 @@ class Controller {
         if (this.autoSaveInterval) clearInterval(this.autoSaveInterval);
       }
     };
+
+    // Auto-inicia el tour de bienvenida solo en la primera visita
+    if (!localStorage.getItem('calificador_tour_seen')) {
+      const welcomeTour = new Tour(this.welcomeSteps);
+      setTimeout(() => welcomeTour.start(), 500);
+    }
+  }
+
+  // Solo se auto-dispara una vez (primera creación de archivo)
+  startAppTour() {
+    if (localStorage.getItem('calificador_app_tour_seen') === 'true') return;
+    localStorage.setItem('calificador_app_tour_seen', 'true');
+    const appTour = new Tour(this.appSteps);
+    setTimeout(() => appTour.start(), 700);
   }
 
   bindEvents() {
+    // Rename class callback (siempre activo)
+    this.view.onRenameClass = (id, newName) => {
+      if (this.model.renameClass(id, newName)) {
+        this.refreshView();
+        this.view.showToast('✅ Materia renombrada');
+        this.model.autoSave();
+      }
+    };
+
     // Welcome Actions
     this.view.bindWelcomeActions(
       this.handleNewFile.bind(this),
@@ -103,14 +152,8 @@ class Controller {
     // Fast-fill header buttons (P⬇, A⬇, S⬇)
     document.querySelectorAll('.h-btn').forEach(btn => {
       btn.onclick = () => {
-        // Find dimension based on parent header
-        const dimTh = btn.closest('.col-dim');
-        let dim = null;
-        if (dimTh.innerHTML.includes('Conceptos')) dim = 'conceptos';
-        else if (dimTh.innerHTML.includes('Práctica')) dim = 'practica';
-        else if (dimTh.innerHTML.includes('Comportamiento')) dim = 'comportamiento';
-        
-        const lvl = btn.textContent.charAt(0); // Extract 'P', 'A', 'S'
+        const dim = btn.dataset.dim;
+        const lvl = btn.dataset.lvl;
         if (dim && CONFIG.LEVELS.includes(lvl)) {
           this.handleFillAll(dim, lvl);
         }
@@ -146,10 +189,7 @@ class Controller {
       this.refreshView();
       this.startAutoSave();
       this.view.showToast('📄 Base de datos creada');
-      
-      if (!localStorage.getItem('calificador_tour_seen')) {
-        setTimeout(() => this.tour.start(), 500);
-      }
+      this.startAppTour();
     } else {
       this.view.showError('Creación de archivo cancelada.');
     }
@@ -163,10 +203,7 @@ class Controller {
         this.view.showToast('📂 Archivo cargado con éxito');
         this.refreshView();
         this.startAutoSave();
-        
-        if (!localStorage.getItem('calificador_tour_seen')) {
-          setTimeout(() => this.tour.start(), 500);
-        }
+        this.startAppTour();
       } else {
         this.view.showError('Apertura cancelada.');
       }
@@ -218,7 +255,7 @@ class Controller {
     this.model.addClass(data.name, students);
     
     this.view.hideAddClassModal();
-    this.view.showToast(`✅ Clase ${data.name} agregada`);
+    this.view.showToast(`✅ Materia ${data.name} agregada`);
     this.refreshView();
     
     if (this.model.currentFileHandle) this.handleSaveFile(false);

@@ -22,7 +22,8 @@ class Model {
     return {
       conceptos: [null, null, null],
       practica: [null, null, null],
-      comportamiento: [null, null, null]
+      comportamiento: [null, null, null],
+      autoevaluacion: [null, null, null]
     };
   }
 
@@ -75,12 +76,42 @@ class Model {
     return 'S';
   }
 
+  // Valoración por periodo (la peor nota prevalece)
   overallLevel(grade) {
     const effs = CONFIG.DIMS.map(d => this.effectiveForDim(grade[d])).filter(Boolean);
     if (effs.length === 0) return null;
     if (effs.includes('P')) return 'P';
     if (effs.includes('A')) return 'A';
     return 'S';
+  }
+
+  // Consolidado del trimestre: S=todos S; A=al menos uno A; P=2+ en P
+  trimesterConsolidated(gradesAllPeriods) {
+    // gradesAllPeriods: array of grade objects (one per period)
+    const effs = [];
+    gradesAllPeriods.forEach(grade => {
+      if (!grade) return;
+      CONFIG.DIMS.forEach(d => {
+        const e = this.effectiveForDim(grade[d]);
+        if (e) effs.push(e);
+      });
+    });
+    if (effs.length === 0) return null;
+    const countP = effs.filter(e => e === 'P').length;
+    if (countP >= 2) return 'P';
+    if (effs.includes('A')) return 'A';
+    if (effs.every(e => e === 'S')) return 'S';
+    return 'A'; // has some S, no A, less than 2 P
+  }
+
+  // Consolidado por estudiante usando todos los periodos actuales
+  getStudentConsolidated(studentIdx) {
+    if (!this.currentClass) return null;
+    const gradesAllPeriods = CONFIG.PERIODS.map(p => {
+      const pg = this.appData.grades[p.id][this.currentClass];
+      return pg ? pg[studentIdx] : null;
+    });
+    return this.trimesterConsolidated(gradesAllPeriods);
   }
 
   updateSession(studentIdx, dim, sessionIdx, lvl) {
@@ -109,7 +140,7 @@ class Model {
   // --- CSV LOGIC ---
 
   generateCSV() {
-    const lines = ['ClaseId,NombreClase,Periodo,Estudiante,Conceptos_1,Conceptos_2,Conceptos_3,Practica_1,Practica_2,Practica_3,Comportamiento_1,Comportamiento_2,Comportamiento_3'];
+    const lines = ['ClaseId,NombreClase,Periodo,Estudiante,Conceptos_1,Conceptos_2,Conceptos_3,Practica_1,Practica_2,Practica_3,Comportamiento_1,Comportamiento_2,Comportamiento_3,Autoevaluacion_1,Autoevaluacion_2,Autoevaluacion_3'];
     
     Object.values(this.appData.classes).forEach(cls => {
       CONFIG.PERIODS.forEach(period => {
@@ -122,14 +153,16 @@ class Model {
           if (!g) return;
           
           const cleanName = studentName.replace(/"/g, '""');
+          const cleanClassName = cls.name.replace(/"/g, '""');
           const row = [
             cls.id,
-            `"${cls.name}"`,
+            `"${cleanClassName}"`,
             periodId,
             `"${cleanName}"`,
             g.conceptos[0] || '', g.conceptos[1] || '', g.conceptos[2] || '',
             g.practica[0] || '', g.practica[1] || '', g.practica[2] || '',
-            g.comportamiento[0] || '', g.comportamiento[1] || '', g.comportamiento[2] || ''
+            g.comportamiento[0] || '', g.comportamiento[1] || '', g.comportamiento[2] || '',
+            (g.autoevaluacion||[null,null,null])[0] || '', (g.autoevaluacion||[null,null,null])[1] || '', (g.autoevaluacion||[null,null,null])[2] || ''
           ];
           lines.push(row.join(','));
         });
@@ -166,7 +199,7 @@ class Model {
       const cols = this.parseCSVRow(line);
       if (cols.length < 13) return; // invalid row
 
-      const [classId, className, period, studentName, c1, c2, c3, p1, p2, p3, b1, b2, b3] = cols;
+      const [classId, className, period, studentName, c1, c2, c3, p1, p2, p3, b1, b2, b3, ae1, ae2, ae3] = cols;
       
       if (!newAppData.classes[classId]) {
         newAppData.classes[classId] = { id: classId, name: className, students: [] };
@@ -191,7 +224,8 @@ class Model {
         newAppData.grades[period][classId][studentIdx] = {
           conceptos: [c1||null, c2||null, c3||null],
           practica: [p1||null, p2||null, p3||null],
-          comportamiento: [b1||null, b2||null, b3||null]
+          comportamiento: [b1||null, b2||null, b3||null],
+          autoevaluacion: [ae1||null, ae2||null, ae3||null]
         };
       }
     });
@@ -239,6 +273,7 @@ class Model {
     const defaultName = `Mi_Calificador_${pad(d.getDate())}_${pad(d.getMonth()+1)}_${d.getFullYear()}.csv`;
     
     if (window.electronAPI) {
+      // === MODO ELECTRON ===
       if (isSaveAs || !this.currentFileHandle) {
         const { filePath, canceled } = await window.electronAPI.showSaveFilePicker({
           defaultPath: defaultName,
@@ -249,39 +284,92 @@ class Model {
       }
       await window.electronAPI.writeFile(this.currentFileHandle, csvStr);
       this.setLastFile(this.currentFileHandle);
-    } else {
-      if (isSaveAs || !this.currentFileHandle) {
-        if (!window.showSaveFilePicker) {
-           const blob = new Blob([csvStr], { type: 'text/csv' });
-           const a = document.createElement('a');
-           a.href = URL.createObjectURL(blob);
-           a.download = defaultName;
-           a.click();
-           return true;
-        }
-        this.currentFileHandle = await window.showSaveFilePicker({
-          types: [{ description: 'Base de Datos CSV', accept: {'text/csv': ['.csv']} }],
-          suggestedName: defaultName
-        });
+
+    } else if (window.showSaveFilePicker) {
+      // === MODO CHROME/EDGE (File System Access API) ===
+      if (typeof this.currentFileHandle === 'string' && !isSaveAs) {
+        // browser_session sin picker: guardar solo en localStorage
+        localStorage.setItem('calificador_session_data', csvStr);
+        localStorage.setItem('calificador_session_name', this.sessionName || defaultName);
+        return true;
       }
+
+      if (isSaveAs || !this.currentFileHandle) {
+        try {
+          this.currentFileHandle = await window.showSaveFilePicker({
+            types: [{ description: 'Base de Datos CSV', accept: {'text/csv': ['.csv']} }],
+            suggestedName: defaultName
+          });
+          this.sessionName = this.currentFileHandle.name;
+        } catch (err) {
+          // Si el usuario cancela el picker y hay sesión activa, guardar en localStorage
+          if (typeof this.currentFileHandle === 'string') {
+            localStorage.setItem('calificador_session_data', csvStr);
+            localStorage.setItem('calificador_session_name', this.sessionName || defaultName);
+            return true;
+          }
+          return false;
+        }
+      }
+      
       const writable = await this.currentFileHandle.createWritable();
       await writable.write(csvStr);
       await writable.close();
+      
+      // Sincronizar con localStorage para el botón "Continuar"
+      localStorage.setItem('calificador_session_data', csvStr);
+      localStorage.setItem('calificador_session_name', this.sessionName || defaultName);
+
+    } else {
+      // === MODO FIREFOX / BROWSER SIN FILE API ===
+      if (isSaveAs || !this.currentFileHandle) {
+        // Pedir nombre de archivo la primera vez
+        const nombre = prompt(
+          '💾 ¿Cómo quieres llamar a tu base de datos?\n(El archivo se descargará y se recuperará automáticamente al reabrir la app)',
+          defaultName
+        );
+        if (nombre === null) return false; // usuario canceló
+        this.sessionName = nombre.endsWith('.csv') ? nombre : nombre + '.csv';
+        this.currentFileHandle = 'browser_session';
+        // Primera vez: descargar el archivo
+        this._browserDownload(csvStr, this.sessionName);
+      } else {
+        // Guardados subsecuentes: solo localStorage, sin descarga
+        localStorage.setItem('calificador_session_data', csvStr);
+        localStorage.setItem('calificador_session_name', this.sessionName || defaultName);
+        return true;
+      }
+      // Guardar en localStorage
+      localStorage.setItem('calificador_session_data', csvStr);
+      localStorage.setItem('calificador_session_name', this.sessionName || defaultName);
     }
     return true;
   }
 
+  _browserDownload(csvStr, filename) {
+    const blob = new Blob([csvStr], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }
+
   setLastFile(filePath) {
-    if (typeof filePath === 'string') {
+    if (typeof filePath === 'string' && filePath !== 'browser_session') {
       localStorage.setItem('calificador_lastFile', filePath);
     }
   }
 
   async checkLastFile() {
-    if (!window.electronAPI) return false;
+    // Modo browser sin Electron: verificar sesión en localStorage
+    if (!window.electronAPI) {
+      const data = localStorage.getItem('calificador_session_data');
+      const name = localStorage.getItem('calificador_session_name');
+      return (data && data.length > 10) ? ('browser_session:' + (name || 'Sesión guardada')) : false;
+    }
     const lastFile = localStorage.getItem('calificador_lastFile');
     if (!lastFile) return false;
-    
     const exists = await window.electronAPI.checkExists(lastFile);
     if (!exists) {
       localStorage.removeItem('calificador_lastFile');
@@ -291,39 +379,55 @@ class Model {
   }
 
   async loadLastFile() {
-    if (!window.electronAPI) return false;
+    // Modo browser sin Electron
+    if (!window.electronAPI) {
+      const data = localStorage.getItem('calificador_session_data');
+      const name = localStorage.getItem('calificador_session_name');
+      if (!data) return false;
+      try {
+        this.appData = this.parseCSV(data);
+        this.currentClass = Object.keys(this.appData.classes)[0] || null;
+        this.currentFileHandle = 'browser_session';
+        this.sessionName = name || 'Mi_Calificador.csv';
+        return this.sessionName;
+      } catch(e) { return false; }
+    }
     const lastFile = localStorage.getItem('calificador_lastFile');
     if (!lastFile) return false;
-    
     const exists = await window.electronAPI.checkExists(lastFile);
     if (!exists) {
       localStorage.removeItem('calificador_lastFile');
       return false;
     }
-    
     try {
       const contents = await window.electronAPI.readFile(lastFile);
       this.appData = this.parseCSV(contents);
       this.currentClass = Object.keys(this.appData.classes)[0] || null;
       this.currentFileHandle = lastFile;
       return lastFile;
-    } catch (e) {
-      return false;
-    }
+    } catch (e) { return false; }
   }
 
   async autoSave() {
-    if (Object.keys(this.appData.classes).length === 0) return; // Don't backup empty state if nothing has been done
+    if (Object.keys(this.appData.classes).length === 0) return;
     const csvStr = this.generateCSV();
-    
+
     if (window.electronAPI && typeof this.currentFileHandle === 'string') {
-      try {
-        await window.electronAPI.writeFile(this.currentFileHandle, csvStr);
-      } catch (e) {}
-    }
-    
-    if (window.electronAPI) {
+      try { await window.electronAPI.writeFile(this.currentFileHandle, csvStr); } catch(e) {}
       await window.electronAPI.saveBackup(csvStr);
+    } else if (this.currentFileHandle && typeof this.currentFileHandle !== 'string' && this.currentFileHandle.createWritable) {
+      // Chrome/Edge FileSystemHandle
+      try {
+        const writable = await this.currentFileHandle.createWritable();
+        await writable.write(csvStr);
+        await writable.close();
+      } catch(e) {}
+      localStorage.setItem('calificador_session_data', csvStr);
+      localStorage.setItem('calificador_session_name', this.sessionName || 'Mi_Calificador.csv');
+    } else {
+      // Modo browser (Firefox o Chrome sin archivo real vinculado)
+      localStorage.setItem('calificador_session_data', csvStr);
+      localStorage.setItem('calificador_session_name', this.sessionName || 'Mi_Calificador.csv');
     }
   }
 
@@ -331,6 +435,14 @@ class Model {
     this.appData = this.createEmptyData();
     this.currentFileHandle = null;
     this.currentClass = null;
+  }
+
+  renameClass(id, newName) {
+    if (this.appData.classes[id]) {
+      this.appData.classes[id].name = newName;
+      return true;
+    }
+    return false;
   }
 
   getStats() {

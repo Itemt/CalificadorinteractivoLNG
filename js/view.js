@@ -7,7 +7,43 @@ class View {
     this.welcomeScreen = document.getElementById('welcomeScreen');
     this.addClassModal = document.getElementById('addClassModal');
     
+    // Rename Class Modal
+    this.renameClassModal = document.getElementById('renameClassModal');
+    this.renameClassIdInput = document.getElementById('renameClassId');
+    this.renameClassNameInput = document.getElementById('renameClassNameInput');
+    this.btnConfirmRename = document.getElementById('btnConfirmRename');
+    this.btnCancelRename = document.getElementById('btnCancelRename');
+
+    if (this.btnCancelRename) this.btnCancelRename.onclick = () => this.hideRenameModal();
+    if (this.btnConfirmRename) this.btnConfirmRename.onclick = () => {
+      const id = this.renameClassIdInput.value;
+      const newName = this.renameClassNameInput.value.trim();
+      if (newName && this.onRenameClass) {
+        this.onRenameClass(id, newName);
+        this.hideRenameModal();
+      }
+    };
+    
+    if (this.renameClassNameInput) {
+      this.renameClassNameInput.onkeydown = (e) => {
+        if (e.key === 'Enter') this.btnConfirmRename.click();
+        if (e.key === 'Escape') this.hideRenameModal();
+      };
+    }
+
     this.setupTheme();
+  }
+
+  showRenameModal(id, currentName) {
+    if (!this.renameClassModal) return;
+    this.renameClassIdInput.value = id;
+    this.renameClassNameInput.value = currentName;
+    this.renameClassModal.style.display = 'flex';
+    setTimeout(() => this.renameClassNameInput.focus(), 100);
+  }
+
+  hideRenameModal() {
+    if (this.renameClassModal) this.renameClassModal.style.display = 'none';
   }
 
   setupTheme() {
@@ -16,9 +52,9 @@ class View {
     this.welcomeThemeToggle = document.getElementById('welcomeThemeToggle');
 
     const updateIcon = () => {
-      const icon = currentTheme === 'light' ? '🌙' : '☀️';
-      if (this.themeToggleBtn) this.themeToggleBtn.textContent = icon;
-      if (this.welcomeThemeToggle) this.welcomeThemeToggle.textContent = icon;
+      const label = currentTheme === 'light' ? '🌙 Modo Oscuro' : '☀️ Modo Claro';
+      if (this.themeToggleBtn) this.themeToggleBtn.textContent = label;
+      if (this.welcomeThemeToggle) this.welcomeThemeToggle.textContent = label;
     };
     updateIcon();
 
@@ -55,8 +91,8 @@ class View {
   }
 
   bindAddClassActions(onCancel, onSave) {
-    document.querySelector('.btn-cancel').onclick = onCancel;
-    document.querySelector('.btn-save').onclick = onSave;
+    document.getElementById('btnCancelAddClass').onclick = onCancel;
+    document.getElementById('btnSaveNewClass').onclick = onSave;
   }
 
   bindWelcomeActions(onNew, onOpen) {
@@ -66,24 +102,34 @@ class View {
     if (btnOpen) btnOpen.onclick = onOpen;
   }
 
-  bindActionRow(onSave, onSaveAs, onExport, onReset, onFillAll) {
-    // Controller handles this via document.getElementById
-  }
-
   renderTabs(classes, currentClass, currentPeriod, onClassSelect, onAddClassClick, onPeriodSelect) {
     this.classTabsContainer.innerHTML = '';
     
     Object.values(classes).forEach(cls => {
       const btn = document.createElement('button');
       btn.className = `tab class-tab ${cls.id === currentClass ? 'active' : ''}`;
-      btn.textContent = `🏫 ${cls.name}`;
+      
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = `🏫 ${cls.name}`;
+      btn.appendChild(nameSpan);
+
+      const editBtn = document.createElement('span');
+      editBtn.className = 'edit-class-btn';
+      editBtn.innerHTML = ' ✏️';
+      editBtn.title = 'Renombrar materia';
+      editBtn.onclick = (e) => {
+        e.stopPropagation();
+        this.showRenameModal(cls.id, cls.name);
+      };
+      btn.appendChild(editBtn);
+
       btn.onclick = () => onClassSelect(cls.id);
       this.classTabsContainer.appendChild(btn);
     });
     
     const addBtn = document.createElement('button');
     addBtn.className = 'tab class-tab tab-add';
-    addBtn.textContent = '➕ Agregar Clase';
+    addBtn.textContent = '➕ Agregar Materia';
     addBtn.onclick = onAddClassClick;
     this.classTabsContainer.appendChild(addBtn);
 
@@ -116,7 +162,7 @@ class View {
 
       const tdTotal = document.createElement('td');
       tdTotal.id = `total-${idx}`;
-      tdTotal.innerHTML = this.buildTotalHtml(grades[idx], model);
+      tdTotal.innerHTML = this.buildTotalHtml(grades[idx], model, idx);
       tr.appendChild(tdTotal);
 
       this.tableBody.appendChild(tr);
@@ -133,7 +179,7 @@ class View {
       td.innerHTML = this.buildDimCellHtml(idx, dim, grade[dim], model);
     });
     
-    document.getElementById(`total-${idx}`).innerHTML = this.buildTotalHtml(grade, model);
+    document.getElementById(`total-${idx}`).innerHTML = this.buildTotalHtml(grade, model, idx);
     const tr = document.getElementById(`row-${idx}`);
     this.applyRowHighlight(tr, grade, model);
 
@@ -178,22 +224,27 @@ class View {
     return `<div class="dim-cell-inner">${rows}${codeHtml}</div>`;
   }
 
-  buildTotalHtml(grade, model) {
+  buildTotalHtml(grade, model, studentIdx) {
     const overall = model.overallLevel(grade);
-    const code = CONFIG.DIMS.map(d => model.effectiveForDim(grade[d]) || '·').join('');
+    const consolidated = (studentIdx !== undefined) ? model.getStudentConsolidated(studentIdx) : null;
 
-    if (!overall) {
-      return `<div class="total-wrap total-empty-wrap">
-        <span class="total-code">· · ·</span>
-        <span class="total-word">Sin calificar</span>
-      </div>`;
-    }
+    const periodBlock = overall
+      ? `<div class="total-period total-${overall.toLowerCase()}">
+          <span class="total-label">Periodo</span>
+          <span class="total-emoji">${CONFIG.LEVEL_EMOJI[overall]}</span>
+          <span class="total-word">${CONFIG.LEVEL_LABEL[overall]}</span>
+        </div>`
+      : `<div class="total-period total-empty-wrap"><span class="total-label">Periodo</span><span class="total-word">Sin calificar</span></div>`;
 
-    return `<div class="total-wrap total-${overall.toLowerCase()}">
-      <span class="total-emoji">${CONFIG.LEVEL_EMOJI[overall]}</span>
-      <span class="total-word">${CONFIG.LEVEL_LABEL[overall]}</span>
-      <span class="total-code">${code}</span>
-    </div>`;
+    const consBlock = consolidated
+      ? `<div class="total-consol total-${consolidated.toLowerCase()}">
+          <span class="total-label">📋 Trimestre</span>
+          <span class="total-emoji">${CONFIG.LEVEL_EMOJI[consolidated]}</span>
+          <span class="total-word">${CONFIG.LEVEL_LABEL[consolidated]}</span>
+        </div>`
+      : `<div class="total-consol total-empty-wrap"><span class="total-label">📋 Trimestre</span><span class="total-word">—</span></div>`;
+
+    return `<div class="total-wrap-v2">${periodBlock}${consBlock}</div>`;
   }
 
   applyRowHighlight(tr, grade, model) {

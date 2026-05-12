@@ -6,24 +6,31 @@ class Tour {
   }
 
   buildDOM() {
-    this.overlay = document.createElement('div');
-    this.overlay.id = 'tour-overlay';
-    document.body.appendChild(this.overlay);
+    // Reutiliza el DOM si ya existe (evita duplicados de IDs)
+    this.overlay = document.getElementById('tour-overlay');
+    if (!this.overlay) {
+      this.overlay = document.createElement('div');
+      this.overlay.id = 'tour-overlay';
+      document.body.appendChild(this.overlay);
+    }
 
-    this.tooltip = document.createElement('div');
-    this.tooltip.id = 'tour-tooltip';
-    this.tooltip.innerHTML = `
-      <div class="tour-title" id="tour-title"></div>
-      <div class="tour-text" id="tour-text"></div>
-      <div class="tour-actions">
-        <button class="tour-btn-skip" id="tour-btn-skip">Omitir</button>
-        <div class="tour-nav">
-          <button class="tour-btn prev" id="tour-btn-prev">Anterior</button>
-          <button class="tour-btn next" id="tour-btn-next">Siguiente</button>
+    this.tooltip = document.getElementById('tour-tooltip');
+    if (!this.tooltip) {
+      this.tooltip = document.createElement('div');
+      this.tooltip.id = 'tour-tooltip';
+      this.tooltip.innerHTML = `
+        <div class="tour-title" id="tour-title"></div>
+        <div class="tour-text" id="tour-text"></div>
+        <div class="tour-actions">
+          <button class="tour-btn-skip" id="tour-btn-skip">Omitir</button>
+          <div class="tour-nav">
+            <button class="tour-btn prev" id="tour-btn-prev">Anterior</button>
+            <button class="tour-btn next" id="tour-btn-next">Siguiente</button>
+          </div>
         </div>
-      </div>
-    `;
-    document.body.appendChild(this.tooltip);
+      `;
+      document.body.appendChild(this.tooltip);
+    }
 
     document.getElementById('tour-btn-skip').onclick = () => this.end();
     document.getElementById('tour-btn-prev').onclick = () => this.prev();
@@ -85,29 +92,46 @@ class Tour {
     document.getElementById('tour-btn-prev').style.display = this.currentStep === 0 ? 'none' : 'block';
     document.getElementById('tour-btn-next').textContent = this.currentStep === this.steps.length - 1 ? '¡Empezar!' : 'Siguiente';
 
-    const rect = target.getBoundingClientRect();
-    
-    // We must ensure the tooltip is displayed temporarily block to measure it correctly
+    // Measure tooltip
     this.tooltip.style.display = 'block';
-    const tooltipRect = this.tooltip.getBoundingClientRect();
+    const tooltipW = this.tooltip.offsetWidth;
+    const tooltipH = this.tooltip.offsetHeight;
     this.tooltip.style.display = '';
 
-    let top = rect.bottom + window.scrollY + 15;
-    let left = rect.left + window.scrollX;
+    const rect = target.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const pad = 16;
+    const gap = 12;
+    const isWide = rect.width > vw * 0.7;
 
-    if (rect.bottom + tooltipRect.height + 15 > window.innerHeight) {
-      top = rect.top + window.scrollY - tooltipRect.height - 15;
-    }
-    if (rect.left + tooltipRect.width > window.innerWidth) {
-      left = window.innerWidth + window.scrollX - tooltipRect.width - 20;
-    }
-    
-    // Fallback if target is too wide (like the class tabs bar)
-    if (rect.width > window.innerWidth * 0.8) {
-        left = (window.innerWidth / 2) + window.scrollX - (tooltipRect.width / 2);
+    // Vertically centered on the target element by default
+    let top = rect.top + (rect.height / 2) - (tooltipH / 2);
+
+    // Prefer RIGHT side; fallback to LEFT
+    let left;
+    const spaceRight = vw - rect.right;
+    const spaceLeft  = rect.left;
+
+    if (!isWide && spaceRight >= tooltipW + gap) {
+      left = rect.right + gap;
+    } else if (!isWide && spaceLeft >= tooltipW + gap) {
+      left = rect.left - tooltipW - gap;
+    } else {
+      // Element is too wide or no side space: Go ABOVE or BELOW
+      left = (vw / 2) - (tooltipW / 2);
+      if (rect.top > tooltipH + gap) {
+        top = rect.top - tooltipH - gap;
+      } else {
+        top = rect.bottom + gap;
+      }
     }
 
-    this.tooltip.style.top = top + 'px';
+    // Clamp both axes inside viewport
+    top  = Math.max(pad, Math.min(top,  vh - tooltipH - pad));
+    left = Math.max(pad, Math.min(left, vw - tooltipW - pad));
+
+    this.tooltip.style.top  = top  + 'px';
     this.tooltip.style.left = left + 'px';
     
     target.scrollIntoView({ behavior: 'smooth', block: 'center' });

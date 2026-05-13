@@ -35,7 +35,7 @@ Dirígete a la pestaña de [**Releases**](../../releases/latest) de este reposit
 
 ### Windows
 
-1. Descarga `Calificador Interactivo Setup 1.X.X.exe`.
+1. Descarga `Calificador Interactivo Setup 1.1.0.exe`.
 2. Ejecútalo. El instalador **no requiere permisos de administrador** y se instala por usuario.
 3. Se crearán accesos directos en el **Escritorio** y el **Menú de Inicio** automáticamente.
 
@@ -48,7 +48,7 @@ Al ser software independiente sin firma de código comercial, Windows puede most
 
 ### macOS
 
-1. Descarga `Calificador Interactivo-1.X.X.dmg`.
+1. Descarga `Calificador Interactivo-1.1.0.dmg`.
 2. Ábrelo y arrastra el ícono a tu carpeta **Aplicaciones**.
 3. La primera vez, haz clic derecho → *Abrir* si macOS muestra una advertencia de desarrollador no verificado.
 

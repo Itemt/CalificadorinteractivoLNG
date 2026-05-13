@@ -6,7 +6,9 @@
   "scripts": {
     "start": "electron .",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac dmg --x64",
+    "dist:win": "electron-builder --win nsis --x64"
   },
   "author": "",
   "license": "ISC",
@@ -17,31 +19,49 @@
   "build": {
     "appId": "com.calificador.app",
     "productName": "Calificador Interactivo",
-    "compression": "normal",
+    "compression": "maximum",
+    "files": [
+      "**/*",
+      "!build/icon.iconset${/*}",
+      "!dist${/*}",
+      "!*.log"
+    ],
     "mac": {
       "category": "public.app-category.education",
-      "icon": "build/icon.icns"
+      "icon": "build/icon.icns",
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] }
+      ],
+      "darkModeSupport": true
+    },
+    "dmg": {
+      "title": "Calificador Interactivo",
+      "icon": "build/icon.icns",
+      "contents": [
+        { "x": 130, "y": 220 },
+        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+      ],
+      "window": { "width": 540, "height": 380 }
     },
     "win": {
+      "icon": "build/icon.ico",
       "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64",
-            "ia32"
-          ]
-        }
+        { "target": "nsis", "arch": ["x64"] }
       ],
-      "icon": "build/icon.png"
+      "requestedExecutionLevel": "asInvoker"
     },
     "nsis": {
       "oneClick": false,
-      "perMachine": true,
+      "perMachine": false,
+      "allowElevation": true,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Calificador Interactivo",
-      "license": "licencia.txt"
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "license": "licencia.txt",
+      "deleteAppDataOnUninstall": false
     },
     "publish": ["github"]
   },

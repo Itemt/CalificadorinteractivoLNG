@@ -32,8 +32,12 @@ app.commandLine.appendSwitch('disable-setuid-sandbox');
 
 function createWindow () {
   writeLog('createWindow() called. __dirname=' + __dirname);
-  const iconPath = path.join(__dirname, 'assets/icon.png');
-  writeLog('iconPath exists: ' + fs.existsSync(iconPath));
+  // Seleccionar icono según plataforma para barra de tareas, dock y ventana
+  const iconFile = process.platform === 'win32'  ? 'build/icon.ico'
+                 : process.platform === 'darwin' ? 'build/icon.icns'
+                 :                                 'assets/icon.png';
+  const iconPath = path.join(__dirname, iconFile);
+  writeLog('iconPath=' + iconPath + ' exists=' + fs.existsSync(iconPath));
 
   const windowOptions = {
     width: 1280,

@@ -6,7 +6,7 @@ Una aplicación de escritorio rápida, **100% offline** y amigable, diseñada pa
 
 ## ✨ Características Principales
 
-- **Multi-Plataforma:** Instaladores nativos para Windows (`.exe`) y Mac (`.dmg`).
+- **Multi-Plataforma:** Instaladores nativos para Windows (`.exe`) y macOS (`.dmg`).
 - **100% Offline y Seguro:** Toda la información se guarda localmente en archivos `.csv` en la computadora del profesor. Los datos nunca se suben a la nube.
 - **Autoguardado Inteligente:** Sistema de autoguardado cada 60 segundos con copias de seguridad rotativas que mantiene las 5 versiones más recientes.
 - **Metodología Pedagógica Completa:**
@@ -16,54 +16,63 @@ Una aplicación de escritorio rápida, **100% offline** y amigable, diseñada pa
     - 🛠️ **C. Praxiológico** (Práctica)
     - 🤝 **C. Axiológico** (Comportamiento)
     - 🙋 **Autoevaluación**
-  - Historial independiente de **3 sesiones de clase** por componente.
-- **Consolidado del Trimestre:** Cada estudiante tiene una valoración automática del trimestre completo visible en todo momento:
+  - Historial independiente de **3 sesiones de clase** por componente, por periodo.
+- **Consolidado del Trimestre:** Valoración automática del trimestre completo visible en todo momento:
   - ⭐ **Superior:** Todos los componentes en Superior.
   - 🔥 **Alto:** Al menos un componente en Alto.
   - 🌱 **En Proceso:** 2 o más componentes en En Proceso.
-- **Múltiples Materias:** Gestiona diferentes grupos o materias desde una sola pantalla con pestañas.
-- **Calificación Rápida:** Botones de relleno automático (P/A/S) para asignar un nivel a toda la clase de un solo clic.
-- **Tour Guiado:** Onboarding paso a paso integrado que inicia desde la pantalla de bienvenida hasta la interfaz de calificación.
-- **Modo Oscuro / Claro:** Disponible desde la pantalla de inicio.
+- **Múltiples Materias:** Gestiona diferentes grupos o materias desde una sola pantalla con pestañas. Cada materia se puede **renombrar** con el ícono ✏️.
+- **Calificación Rápida:** Botones de relleno automático (P/A/S) en la cabecera de cada columna para asignar un nivel a toda la clase de un solo clic.
+- **Tour Guiado:** Onboarding paso a paso integrado que inicia automáticamente al crear tu primer archivo y puede repetirse desde el botón "Tour Guiado".
+- **Modo Oscuro / Claro:** Disponible desde la pantalla de inicio y desde la app.
+- **Exportar resumen:** Copia un reporte de texto plano al portapapeles para pegar en chats o correos.
 
 ---
 
 ## 📦 Descarga e Instalación
 
-Para instalar el Calificador Interactivo, dirígete a la pestaña de [**Releases**](../../releases/latest) de este repositorio.
+Dirígete a la pestaña de [**Releases**](../../releases/latest) de este repositorio y descarga el archivo correspondiente a tu sistema operativo.
 
-### 🛡️ Nota importante para usuarios de Windows (Microsoft Edge / SmartScreen)
+### Windows
 
-Al ser un software nuevo e independiente, es posible que **Microsoft Edge** o **Windows Defender SmartScreen** muestren una advertencia. **Esto es un falso positivo normal** para apps que aún no cuentan con un certificado digital comercial.
+1. Descarga `Calificador Interactivo Setup 1.X.X.exe`.
+2. Ejecútalo. El instalador **no requiere permisos de administrador** y se instala por usuario.
+3. Se crearán accesos directos en el **Escritorio** y el **Menú de Inicio** automáticamente.
 
-* **En Edge:** Haz clic en los tres puntos `...` junto a la descarga > *Mantener* > *Mostrar más* > *Mantener de todos modos*.
-* **En Windows (al instalar):** Haz clic en *Más información* y luego en *Ejecutar de todas formas*.
+#### 🛡️ Advertencia de SmartScreen (Windows Defender)
 
-### Pasos de instalación
+Al ser software independiente sin firma de código comercial, Windows puede mostrar una advertencia la primera vez. **Es un falso positivo.**
 
-1. **Windows:** Descarga el archivo `Calificador Interactivo Setup X.X.X.exe` y ejecútalo. El instalador te guiará paso a paso y creará un acceso directo en el Escritorio y el Menú de Inicio.
-2. **Mac:** Descarga el archivo `.dmg`, ábrelo y arrastra el ícono a tu carpeta de Aplicaciones.
+- **Al descargar en Edge:** clic en `···` junto a la descarga → *Mantener* → *Mostrar más* → *Mantener de todos modos*.
+- **Al instalar:** clic en *Más información* → *Ejecutar de todas formas*.
+
+### macOS
+
+1. Descarga `Calificador Interactivo-1.X.X.dmg`.
+2. Ábrelo y arrastra el ícono a tu carpeta **Aplicaciones**.
+3. La primera vez, haz clic derecho → *Abrir* si macOS muestra una advertencia de desarrollador no verificado.
 
 ---
 
 ## 🚀 Cómo Usar (Guía Rápida)
 
-1. **Abre la app** → Se mostrará la pantalla de bienvenida con un tour guiado automático.
+1. **Abre la app** → La pantalla de bienvenida aparece con el Tour Guiado automático.
 2. **Crear Archivo Nuevo** → Elige dónde guardar tu base de datos `.csv`.
-3. **Agregar Materia** → Ingresa el nombre de la materia/clase y pega la lista de estudiantes (un nombre por línea).
-4. **Califica** → Haz clic en los botones `P`, `A` o `S` de cada sesión. El sistema calcula automáticamente la valoración por periodo y el consolidado del trimestre.
-5. **Guardar** → Usa *Guardar BD* para guardar. El autoguardado también lo hace cada 60 segundos.
-6. **Exportar** → Usa *Copiar a portapapeles* para pegar el reporte de notas en un chat o correo.
+3. **Agregar Materia** → Ingresa el nombre y pega la lista de estudiantes (un nombre por línea).
+4. **Califica** → Clic en `P`, `A` o `S` en cada sesión. El sistema calcula la valoración por periodo y el consolidado del trimestre en tiempo real.
+5. **Guardar** → Usa *Guardar BD* para guardar en el mismo archivo. *Exportar BD* para guardar una copia nueva. El autoguardado actúa cada 60 segundos.
+6. **Exportar resumen** → Usa *Copiar a portapapeles* para pegar el reporte en un chat o correo.
 
 ---
 
 ## 🛠️ Para Desarrolladores
 
-### Requisitos Previos
-- Node.js (v16 o superior)
+### Requisitos
+
+- Node.js v18 o superior
 - Git
 
-### Instalación Local
+### Instalación local
 
 ```bash
 git clone https://github.com/Itemt/CalificadorinteractivoLNG.git
@@ -72,35 +81,46 @@ npm install
 npm start
 ```
 
-### Compilación de Instaladores
+### Compilar instaladores
 
 ```bash
-# Mac (genera .dmg)
-npm run dist -- --mac --publish never
+# macOS → genera .dmg (x64 + arm64)
+npm run dist:mac
 
-# Windows (genera Setup.exe para x64 e ia32)
-npm run dist -- --win --publish never
+# Windows → genera Setup .exe (x64)
+npm run dist:win
+
+# Ambas plataformas
+npm run dist
 ```
 
-Los instaladores quedan en la carpeta `/dist`.
+Los instaladores quedan en la carpeta `dist/`.
 
-Para publicar una nueva versión en GitHub Releases automáticamente, crea un tag:
+### Publicar una nueva versión
+
+1. Actualiza `"version"` en `package.json`.
+2. Actualiza el README si es necesario.
+3. Haz commit y crea el tag:
 
 ```bash
 git tag v1.X.X
 git push origin v1.X.X
 ```
 
-GitHub Actions compilará y publicará los instaladores automáticamente.
+GitHub Actions compilará y publicará los instaladores automáticamente en GitHub Releases.
 
 ---
 
-## 🚀 Tecnologías
+## 🏗️ Tecnologías
 
-- Vanilla JavaScript (ES6+)
-- HTML5 & CSS3 (Variables, Flexbox, Grid)
-- [Electron.js](https://www.electronjs.org/) — Framework de escritorio multiplataforma
-- [electron-builder](https://www.electron.build/) — Empaquetado y distribución
+| Tecnología | Rol |
+|---|---|
+| Vanilla JS (ES6+) | Lógica de la aplicación (MVC) |
+| HTML5 & CSS3 | Interfaz con variables CSS, Flexbox y Grid |
+| [Electron.js](https://www.electronjs.org/) v41 | Framework de escritorio multiplataforma |
+| [electron-builder](https://www.electron.build/) v26 | Empaquetado y distribución (NSIS, DMG) |
+
+---
 
 ## 📄 Licencia
 

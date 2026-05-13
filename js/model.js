@@ -78,18 +78,9 @@ class Model {
     return 'S';
   }
 
-  // Valoración por periodo (la peor nota prevalece).
-  // Solo califica si TODAS las sesiones de TODAS las dimensiones están llenas.
-  overallLevel(grade, numSesiones) {
-    const n = numSesiones || this.getCurrentClassData()?.numSesiones || 3;
-    // Verificar que todas las sesiones de todas las dims están llenas
-    for (const d of CONFIG.DIMS) {
-      const sessions = grade[d] || [];
-      for (let i = 0; i < n; i++) {
-        if (!sessions[i]) return null; // sesión vacía → sin calificación
-      }
-    }
-    const effs = CONFIG.DIMS.map(d => this.effectiveForDim((grade[d] || []).slice(0, n))).filter(Boolean);
+  // Valoración por periodo (la peor nota prevalece — calcula con las sesiones ya registradas)
+  overallLevel(grade) {
+    const effs = CONFIG.DIMS.map(d => this.effectiveForDim(grade[d] || [])).filter(Boolean);
     if (effs.length === 0) return null;
     if (effs.includes('P')) return 'P';
     if (effs.includes('A')) return 'A';
@@ -157,9 +148,13 @@ class Model {
     
     students.forEach((name, idx) => {
       const sessions = grades[idx][dim];
-      // Solo llenar hasta numSesiones
-      const emptyIdx = sessions.findIndex((g, i) => g === null && i < numSesiones);
+      // Buscar primer slot vacío dentro de numSesiones, expandiendo el array si es necesario
+      let emptyIdx = -1;
+      for (let i = 0; i < numSesiones; i++) {
+        if (!sessions[i]) { emptyIdx = i; break; }
+      }
       if (emptyIdx !== -1) {
+        while (sessions.length <= emptyIdx) sessions.push(null);
         sessions[emptyIdx] = lvl;
         filledCount++;
       }
@@ -585,8 +580,9 @@ class Model {
       const overall = this.overallLevel(g);
       const overallStr = (overall ? CONFIG.LEVEL_LABEL[overall] : '—').padEnd(13);
 
-      // Asistencia: mostrar qué clases faltó
-      const att = g.asistencia || [null, null, null];
+      // Asistencia: mostrar qué clases faltó (respeta numSesiones de la clase)
+      const numSes = this.getCurrentClassData()?.numSesiones || 3;
+      const att = (g.asistencia || []).slice(0, numSes);
       const faltas = att.map((a, i) => a === 'A' ? `F.C${i+1}` : null).filter(Boolean);
       const attStr = faltas.length === 0 ? '✓ todas' : faltas.join(' ');
 

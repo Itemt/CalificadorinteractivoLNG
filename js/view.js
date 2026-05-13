@@ -158,6 +158,7 @@ class View {
   renderTable(students, grades, model, onSessionSelect, onAttendance, onPoints, numSesiones = 3) {
     this.tableBody.innerHTML = '';
     this.numSesiones = numSesiones; // guardado para updateRow
+    this.currentGrades = grades;   // guardado para refrescar highlights de puntos
     if (!students || students.length === 0) return;
 
     students.forEach((name, idx) => {
@@ -189,10 +190,14 @@ class View {
 
     this.attachGradeListeners(this.tableBody, onSessionSelect);
     this.attachStudentListeners(this.tableBody, onAttendance, onPoints);
+    this.applyPointsHighlights(grades);
   }
 
   updateRow(idx, grade, model, onSessionSelect, onAttendance, onPoints) {
     const numSesiones = this.numSesiones || 3;
+
+    // Mantener currentGrades sincronizado para highlights de puntos
+    if (this.currentGrades) this.currentGrades[idx] = grade;
 
     const tdName = document.getElementById(`student-cell-${idx}`);
     if (tdName) {
@@ -212,6 +217,7 @@ class View {
     this.applyRowHighlight(tr, grade, model);
 
     this.attachGradeListeners(tr, onSessionSelect);
+    if (this.currentGrades) this.applyPointsHighlights(this.currentGrades);
   }
 
   buildStudentCellHtml(idx, name, grade, numSesiones = 3) {
@@ -329,6 +335,29 @@ class View {
       : `<div class="total-consol total-empty-wrap"><span class="total-label">📋 Trimestre</span><span class="total-word">—</span></div>`;
 
     return `<div class="total-wrap-v2">${periodBlock}${consBlock}</div>`;
+  }
+
+  applyPointsHighlights(grades) {
+    if (!grades || grades.length === 0) return;
+
+    const points = grades.map(g => g?.puntos || 0);
+    const maxPts = Math.max(...points);
+    const minPts = Math.min(...points);
+
+    grades.forEach((g, idx) => {
+      const row = document.getElementById(`row-${idx}`);
+      const cell = document.getElementById(`student-cell-${idx}`);
+      if (!row || !cell) return;
+      const pts = g?.puntos || 0;
+
+      const isLeader  = maxPts > 0 && pts === maxPts;
+      const isTrailer = minPts < 0 && pts === minPts;
+
+      row.classList.toggle('pts-leader', isLeader);
+      row.classList.toggle('pts-trailer', isTrailer);
+      cell.classList.toggle('pts-leader-cell', isLeader);
+      cell.classList.toggle('pts-trailer-cell', isTrailer);
+    });
   }
 
   applyRowHighlight(tr, grade, model) {

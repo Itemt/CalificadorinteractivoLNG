@@ -1,6 +1,6 @@
 {
   "name": "calificador-interactivo",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Calificador interactivo para profesores",
   "main": "main.js",
   "scripts": {

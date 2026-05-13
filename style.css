@@ -432,7 +432,25 @@ td.col-student {
 .student-extras {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.extra-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.extra-lbl {
+  font-size: .6rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 /* === ASISTENCIA === */
@@ -442,23 +460,29 @@ td.col-student {
 }
 
 .att-btn {
-  width: 20px;
   height: 20px;
-  border-radius: 50%;
+  min-width: 32px;
+  padding: 0 4px;
+  border-radius: 6px;
   border: 2px solid;
-  font-size: .62rem;
+  font-size: .6rem;
   font-weight: 900;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   flex-shrink: 0;
   transition: transform var(--transition);
   font-family: inherit;
+  white-space: nowrap;
 }
 
+.att-icon { font-size: .7rem; line-height: 1; }
+.att-num  { font-size: .58rem; font-weight: 900; opacity: .85; }
+
 .att-btn.att-present {
-  background: var(--surface);
+  background: #22c55e18;
   border-color: #22c55e;
   color: #22c55e;
 }
@@ -469,7 +493,7 @@ td.col-student {
   color: #ef4444;
 }
 
-.att-btn:hover { transform: scale(1.2); }
+.att-btn:hover { transform: scale(1.1); }
 
 /* === PUNTOS POSITIVOS / NEGATIVOS === */
 .pts-wrap {
@@ -479,13 +503,13 @@ td.col-student {
 }
 
 .pts-btn {
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--muted);
-  font-size: .75rem;
+  font-size: .82rem;
   font-weight: 900;
   cursor: pointer;
   display: flex;
@@ -497,15 +521,15 @@ td.col-student {
   line-height: 1;
 }
 
-.pts-btn.pts-plus:hover  { background: #22c55e22; border-color: #22c55e; color: #22c55e; transform: scale(1.2); }
-.pts-btn.pts-minus:hover { background: #ef444422; border-color: #ef4444; color: #ef4444; transform: scale(1.2); }
+.pts-btn.pts-plus:hover  { background: #22c55e22; border-color: #22c55e; color: #22c55e; transform: scale(1.15); }
+.pts-btn.pts-minus:hover { background: #ef444422; border-color: #ef4444; color: #ef4444; transform: scale(1.15); }
 
 .pts-val {
-  font-size: .72rem;
+  font-size: .78rem;
   font-weight: 900;
-  min-width: 22px;
+  min-width: 26px;
   text-align: center;
-  letter-spacing: -.5px;
+  letter-spacing: -.3px;
 }
 
 .pts-val.pts-pos  { color: #22c55e; }

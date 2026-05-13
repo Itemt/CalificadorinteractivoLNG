@@ -199,11 +199,16 @@ class View {
     const att = grade.asistencia || [null, null, null];
     const pts = grade.puntos || 0;
 
-    const attDots = att.map((a, si) => {
+    const attBtns = att.map((a, si) => {
       const absent = a === 'A';
-      const cls = absent ? 'att-btn att-absent' : 'att-btn att-present';
-      const title = absent ? `Sesión ${si + 1}: Ausente` : `Sesión ${si + 1}: Presente`;
-      return `<button class="${cls}" data-idx="${idx}" data-si="${si}" title="${title}">${si + 1}</button>`;
+      const cls    = absent ? 'att-btn att-absent' : 'att-btn att-present';
+      const icon   = absent ? '✗' : '✓';
+      const tip    = absent
+        ? `Clase ${si + 1}: Faltó — clic para marcar Presente`
+        : `Clase ${si + 1}: Presente — clic para marcar Ausente`;
+      return `<button class="${cls}" data-idx="${idx}" data-si="${si}" title="${tip}">
+        <span class="att-icon">${icon}</span><span class="att-num">C${si + 1}</span>
+      </button>`;
     }).join('');
 
     const ptsClass = pts > 0 ? 'pts-pos' : pts < 0 ? 'pts-neg' : 'pts-zero';
@@ -212,11 +217,17 @@ class View {
     return `
       <span class="student-name">${name}</span>
       <div class="student-extras">
-        <div class="att-dots">${attDots}</div>
-        <div class="pts-wrap">
-          <button class="pts-btn pts-minus" data-idx="${idx}" data-delta="-1" title="Punto negativo">−</button>
-          <span class="pts-val ${ptsClass}">${ptsLabel}</span>
-          <button class="pts-btn pts-plus" data-idx="${idx}" data-delta="1" title="Punto positivo">+</button>
+        <div class="extra-row">
+          <span class="extra-lbl">📋 Asistencia</span>
+          <div class="att-dots">${attBtns}</div>
+        </div>
+        <div class="extra-row">
+          <span class="extra-lbl">⭐ Puntos</span>
+          <div class="pts-wrap">
+            <button class="pts-btn pts-minus" data-idx="${idx}" data-delta="-1" title="Punto negativo">−</button>
+            <span class="pts-val ${ptsClass}">${ptsLabel}</span>
+            <button class="pts-btn pts-plus" data-idx="${idx}" data-delta="1" title="Punto positivo">+</button>
+          </div>
         </div>
       </div>`;
   }

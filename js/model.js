@@ -524,8 +524,10 @@ class Model {
     const className = this.getCurrentClassData().name.toUpperCase();
     const periodName = CONFIG.PERIODS.find(p => p.id === this.currentPeriod).label.toUpperCase();
     
-    const lines = [`REPORTE: ${className} - PERIODO ${periodName}\n${'─'.repeat(75)}`];
-    lines.push(`${'ESTUDIANTE'.padEnd(38)} CONCEPTOS  PRÁCTICA   COMPORTAM  TOTAL`);
+    const sep = '─'.repeat(85);
+    const lines = [`REPORTE: ${className} — PERIODO ${periodName}\n${sep}`];
+    lines.push(`${'ESTUDIANTE'.padEnd(34)} CONCEPTOS  PRÁCTICA   COMPORTAM  TOTAL        ASIST.  PTS`);
+    lines.push(sep);
 
     const students = this.getStudents();
     const grades = this.getGrades();
@@ -539,9 +541,26 @@ class Model {
         return `${code}(${eff})`.padEnd(11);
       };
       const overall = this.overallLevel(g);
-      const overallStr = overall ? CONFIG.LEVEL_LABEL[overall] : '—';
-      lines.push(`${name.substring(0, 37).padEnd(38)} ${fmtDim('conceptos')}${fmtDim('practica')}${fmtDim('comportamiento')}${overallStr}`);
+      const overallStr = (overall ? CONFIG.LEVEL_LABEL[overall] : '—').padEnd(13);
+
+      // Asistencia: mostrar qué clases faltó
+      const att = g.asistencia || [null, null, null];
+      const faltas = att.map((a, i) => a === 'A' ? `F.C${i+1}` : null).filter(Boolean);
+      const attStr = faltas.length === 0 ? '✓ todas' : faltas.join(' ');
+
+      // Puntos
+      const pts = g.puntos || 0;
+      const ptsStr = pts > 0 ? `+${pts}` : `${pts}`;
+
+      lines.push(`${name.substring(0, 33).padEnd(34)} ${fmtDim('conceptos')}${fmtDim('practica')}${fmtDim('comportamiento')}${overallStr}${attStr.padEnd(8)}  ${ptsStr}`);
     });
+
+    lines.push(sep);
+    // Resumen de ausencias
+    const totalAusencias = grades.reduce((sum, g) => sum + (g.asistencia||[]).filter(a => a === 'A').length, 0);
+    if (totalAusencias > 0) {
+      lines.push(`Ausencias registradas: ${totalAusencias}`);
+    }
 
     return lines.join('\n');
   }

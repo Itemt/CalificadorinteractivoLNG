@@ -78,7 +78,12 @@ class Controller {
       {
         target: '.student-extras',
         title: '📋 Asistencia y Puntos',
-        text: 'Los botones numerados registran la asistencia por clase (verde = presente, rojo = ausente). El número de botones refleja las clases configuradas para esta materia. Los botones ＋ y − acumulan puntos positivos o negativos en el nivel actual.'
+        text: 'Los botones numerados registran la asistencia por clase (verde = presente, rojo = ausente). El número de botones refleja las clases configuradas para esta materia. Los botones ＋ y − acumulan puntos positivos o negativos en el nivel actual. La etiqueta "Asistencia" y los botones mantienen espacio para que no se encimen.'
+      },
+      {
+        target: '#gradingTable',
+        title: '🌟 Destacados por puntos',
+        text: 'La fila completa del estudiante con más puntos positivos se resalta en verde (empates: varios a la vez). La del peor puntaje negativo en rojo. En modo claro los colores son un poco más suaves para que se lea bien el texto.'
       },
       {
         target: '.action-row',

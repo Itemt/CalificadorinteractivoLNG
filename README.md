@@ -17,13 +17,13 @@ Una aplicación de escritorio rápida, **100% offline** y amigable, diseñada pa
     - 🤝 **C. Axiológico** (Comportamiento)
     - 🙋 **Autoevaluación**
   - 🔢 **Clases por nivel configurables:** al crear o editar una materia, el profesor define cuántas sesiones de clase se evalúan en cada nivel (1 a 10). Los archivos existentes siguen funcionando sin cambios.
-- **Consolidado del Trimestre:** Valoración automática del trimestre completo (requiere todas las sesiones calificadas):
+- **Consolidado del Trimestre:** Valoración automática del trimestre completo según los datos ya registrados en los distintos niveles:
   - ⭐ **Superior:** Todos los componentes en Superior.
   - 🔥 **Alto:** Al menos un componente en Alto.
   - 🌱 **En Proceso:** 2 o más componentes en En Proceso.
 - **Múltiples Materias:** Gestiona diferentes grupos o materias con pestañas. Cada materia se puede **renombrar y editar** (incluyendo el número de sesiones) con el ícono ✏️ en cualquier momento.
 - **Asistencia por Sesión:** Botones de ✓/✗ por cada sesión de clase registran la asistencia en tiempo real. Las ausencias se reflejan en el reporte exportado.
-- **Puntos Positivos/Negativos:** Sistema de puntos acumulables por estudiante y por nivel con botones ＋ y −.
+- **Puntos Positivos/Negativos:** Sistema de puntos acumulables por estudiante y por nivel con botones ＋ y −. La fila entera del que lleva más puntos se resalta en verde y la del peor puntaje en rojo (si hay empate, se resaltan todos); en modo claro el tono es un poco más suave para buena lectura.
 - **Calificación Rápida:** Botones de relleno automático (P/A/S) en la cabecera de cada columna para asignar un nivel a toda la clase de un solo clic.
 - **Tour Guiado:** Onboarding paso a paso integrado que inicia automáticamente al crear tu primer archivo y puede repetirse desde el botón "Tour Guiado".
 - **Modo Oscuro / Claro:** Disponible desde la pantalla de inicio y desde la app.
@@ -37,7 +37,7 @@ Dirígete a la pestaña de [**Releases**](../../releases/latest) de este reposit
 
 ### Windows
 
-1. Descarga `Calificador Interactivo Setup 1.2.0.exe`.
+1. Descarga `Calificador Interactivo Setup 1.2.2.exe`.
 2. Ejecútalo. El instalador **no requiere permisos de administrador** y se instala por usuario.
 3. Se crearán accesos directos en el **Escritorio** y el **Menú de Inicio** automáticamente.
 
@@ -52,7 +52,7 @@ Al ser software independiente sin firma de código comercial, Windows puede most
 
 ### macOS
 
-1. Descarga `Calificador Interactivo-1.2.0.dmg`.
+1. Descarga `Calificador Interactivo-1.2.2.dmg`.
 2. Ábrelo y arrastra el ícono a tu carpeta **Aplicaciones**.
 3. La primera vez, haz clic derecho → *Abrir* si macOS muestra una advertencia de desarrollador no verificado.
 
@@ -63,7 +63,7 @@ Al ser software independiente sin firma de código comercial, Windows puede most
 1. **Abre la app** → La pantalla de bienvenida aparece con el Tour Guiado automático.
 2. **Crear Archivo Nuevo** → Elige dónde guardar tu base de datos `.csv`.
 3. **Agregar Materia** → Ingresa el nombre, define cuántas clases por nivel (default: 3) y pega la lista de estudiantes (un nombre por línea).
-4. **Califica** → Clic en `P`, `A` o `S` en cada sesión. La valoración por periodo y el consolidado aparecen automáticamente cuando **todas las sesiones del nivel están calificadas**.
+4. **Califica** → Clic en `P`, `A` o `S` en cada sesión. La valoración del **nivel actual** se actualiza según lo que ya registraste. En cada componente, el resumen (badge) solo aparece cuando **todas las sesiones de ese componente** están calificadas.
 5. **Asistencia** → Usa los botones ✓/✗ por sesión en la columna del estudiante.
 6. **Puntos** → Usa ＋ y − para acumular puntos positivos/negativos por nivel.
 7. **Editar Materia** → Haz clic en ✏️ sobre cualquier pestaña para renombrar o cambiar el número de clases por nivel.

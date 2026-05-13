@@ -23,7 +23,9 @@ class Model {
       conceptos: [null, null, null],
       practica: [null, null, null],
       comportamiento: [null, null, null],
-      autoevaluacion: [null, null, null]
+      autoevaluacion: [null, null, null],
+      asistencia: [null, null, null], // null = presente, 'A' = ausente
+      puntos: 0
     };
   }
 
@@ -121,6 +123,20 @@ class Model {
     return grades[studentIdx];
   }
 
+  updateAttendance(studentIdx, sessionIdx) {
+    const grades = this.getGrades();
+    const att = grades[studentIdx].asistencia || [null, null, null];
+    att[sessionIdx] = att[sessionIdx] === 'A' ? null : 'A';
+    grades[studentIdx].asistencia = att;
+    return grades[studentIdx];
+  }
+
+  updatePoints(studentIdx, delta) {
+    const grades = this.getGrades();
+    grades[studentIdx].puntos = (grades[studentIdx].puntos || 0) + delta;
+    return grades[studentIdx];
+  }
+
   fillAllDimension(dim, lvl) {
     let filledCount = 0;
     const students = this.getStudents();
@@ -140,7 +156,7 @@ class Model {
   // --- CSV LOGIC ---
 
   generateCSV() {
-    const lines = ['ClaseId,NombreClase,Periodo,Estudiante,Conceptos_1,Conceptos_2,Conceptos_3,Practica_1,Practica_2,Practica_3,Comportamiento_1,Comportamiento_2,Comportamiento_3,Autoevaluacion_1,Autoevaluacion_2,Autoevaluacion_3'];
+    const lines = ['ClaseId,NombreClase,Periodo,Estudiante,Conceptos_1,Conceptos_2,Conceptos_3,Practica_1,Practica_2,Practica_3,Comportamiento_1,Comportamiento_2,Comportamiento_3,Autoevaluacion_1,Autoevaluacion_2,Autoevaluacion_3,Asistencia_1,Asistencia_2,Asistencia_3,Puntos'];
     
     Object.values(this.appData.classes).forEach(cls => {
       CONFIG.PERIODS.forEach(period => {
@@ -154,6 +170,7 @@ class Model {
           
           const cleanName = studentName.replace(/"/g, '""');
           const cleanClassName = cls.name.replace(/"/g, '""');
+          const att = g.asistencia || [null, null, null];
           const row = [
             cls.id,
             `"${cleanClassName}"`,
@@ -162,7 +179,9 @@ class Model {
             g.conceptos[0] || '', g.conceptos[1] || '', g.conceptos[2] || '',
             g.practica[0] || '', g.practica[1] || '', g.practica[2] || '',
             g.comportamiento[0] || '', g.comportamiento[1] || '', g.comportamiento[2] || '',
-            (g.autoevaluacion||[null,null,null])[0] || '', (g.autoevaluacion||[null,null,null])[1] || '', (g.autoevaluacion||[null,null,null])[2] || ''
+            (g.autoevaluacion||[null,null,null])[0] || '', (g.autoevaluacion||[null,null,null])[1] || '', (g.autoevaluacion||[null,null,null])[2] || '',
+            att[0] || '', att[1] || '', att[2] || '',
+            g.puntos || 0
           ];
           lines.push(row.join(','));
         });
@@ -199,7 +218,8 @@ class Model {
       const cols = this.parseCSVRow(line);
       if (cols.length < 13) return; // invalid row
 
-      const [classId, className, period, studentName, c1, c2, c3, p1, p2, p3, b1, b2, b3, ae1, ae2, ae3] = cols;
+      const [classId, className, period, studentName, c1, c2, c3, p1, p2, p3, b1, b2, b3, ae1, ae2, ae3,
+             att1, att2, att3, ptsRaw] = cols;
       
       if (!newAppData.classes[classId]) {
         newAppData.classes[classId] = { id: classId, name: className, students: [] };
@@ -225,7 +245,9 @@ class Model {
           conceptos: [c1||null, c2||null, c3||null],
           practica: [p1||null, p2||null, p3||null],
           comportamiento: [b1||null, b2||null, b3||null],
-          autoevaluacion: [ae1||null, ae2||null, ae3||null]
+          autoevaluacion: [ae1||null, ae2||null, ae3||null],
+          asistencia: [att1||null, att2||null, att3||null],
+          puntos: parseInt(ptsRaw) || 0
         };
       }
     });

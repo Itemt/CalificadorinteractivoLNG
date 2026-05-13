@@ -139,7 +139,7 @@ class View {
     });
   }
 
-  renderTable(students, grades, model, onSessionSelect) {
+  renderTable(students, grades, model, onSessionSelect, onAttendance, onPoints) {
     this.tableBody.innerHTML = '';
     if (!students || students.length === 0) return;
 
@@ -149,7 +149,8 @@ class View {
 
       const tdName = document.createElement('td');
       tdName.className = 'col-student';
-      tdName.textContent = name;
+      tdName.id = `student-cell-${idx}`;
+      tdName.innerHTML = this.buildStudentCellHtml(idx, name, grades[idx]);
       tr.appendChild(tdName);
 
       CONFIG.DIMS.forEach(dim => {
@@ -169,11 +170,19 @@ class View {
       this.applyRowHighlight(tr, grades[idx], model);
     });
 
-    // Attach grade button listeners
     this.attachGradeListeners(this.tableBody, onSessionSelect);
+    this.attachStudentListeners(this.tableBody, onAttendance, onPoints);
   }
 
-  updateRow(idx, grade, model, onSessionSelect) {
+  updateRow(idx, grade, model, onSessionSelect, onAttendance, onPoints) {
+    const tdName = document.getElementById(`student-cell-${idx}`);
+    if (tdName) {
+      const nameEl = tdName.querySelector('.student-name');
+      const name = nameEl ? nameEl.textContent : '';
+      tdName.innerHTML = this.buildStudentCellHtml(idx, name, grade);
+      this.attachStudentListeners(tdName, onAttendance, onPoints);
+    }
+
     CONFIG.DIMS.forEach(dim => {
       const td = document.getElementById(`dim-${idx}-${dim}`);
       td.innerHTML = this.buildDimCellHtml(idx, dim, grade[dim], model);
@@ -183,8 +192,33 @@ class View {
     const tr = document.getElementById(`row-${idx}`);
     this.applyRowHighlight(tr, grade, model);
 
-    // Reattach listeners just for this row
     this.attachGradeListeners(tr, onSessionSelect);
+  }
+
+  buildStudentCellHtml(idx, name, grade) {
+    const att = grade.asistencia || [null, null, null];
+    const pts = grade.puntos || 0;
+
+    const attDots = att.map((a, si) => {
+      const absent = a === 'A';
+      const cls = absent ? 'att-btn att-absent' : 'att-btn att-present';
+      const title = absent ? `Sesión ${si + 1}: Ausente` : `Sesión ${si + 1}: Presente`;
+      return `<button class="${cls}" data-idx="${idx}" data-si="${si}" title="${title}">${si + 1}</button>`;
+    }).join('');
+
+    const ptsClass = pts > 0 ? 'pts-pos' : pts < 0 ? 'pts-neg' : 'pts-zero';
+    const ptsLabel = pts > 0 ? `+${pts}` : `${pts}`;
+
+    return `
+      <span class="student-name">${name}</span>
+      <div class="student-extras">
+        <div class="att-dots">${attDots}</div>
+        <div class="pts-wrap">
+          <button class="pts-btn pts-minus" data-idx="${idx}" data-delta="-1" title="Punto negativo">−</button>
+          <span class="pts-val ${ptsClass}">${ptsLabel}</span>
+          <button class="pts-btn pts-plus" data-idx="${idx}" data-delta="1" title="Punto positivo">+</button>
+        </div>
+      </div>`;
   }
 
   attachGradeListeners(container, onSessionSelect) {
@@ -195,6 +229,21 @@ class View {
         const si = e.target.dataset.si;
         const lvl = e.target.dataset.lvl;
         onSessionSelect(parseInt(idx), dim, parseInt(si), lvl);
+      };
+    });
+  }
+
+  attachStudentListeners(container, onAttendance, onPoints) {
+    container.querySelectorAll('.att-btn').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        onAttendance(parseInt(e.currentTarget.dataset.idx), parseInt(e.currentTarget.dataset.si));
+      };
+    });
+    container.querySelectorAll('.pts-btn').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        onPoints(parseInt(e.currentTarget.dataset.idx), parseInt(e.currentTarget.dataset.delta));
       };
     });
   }

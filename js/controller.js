@@ -76,6 +76,11 @@ class Controller {
         text: 'Cada nivel (Inicial, Básico, Nivel Alto, Superior) tiene su propio historial de notas independiente.'
       },
       {
+        target: '.student-extras',
+        title: '📋 Asistencia y Puntos',
+        text: 'En cada fila: los 3 círculos numerados marcan la asistencia por sesión (verde = presente, rojo = ausente). Los botones ＋ y − acumulan puntos positivos o negativos para el estudiante durante el periodo.'
+      },
+      {
         target: '.action-row',
         title: '💾 Guardar y Exportar',
         text: 'Tus datos se autoguardan cada minuto. Aquí puedes guardar manualmente, exportar a CSV o copiar el resumen al portapapeles.'
@@ -176,7 +181,9 @@ class Controller {
       this.model.getStudents(),
       this.model.getGrades(),
       this.model,
-      this.handleSessionSelect.bind(this)
+      this.handleSessionSelect.bind(this),
+      this.handleAttendance.bind(this),
+      this.handlePoints.bind(this)
     );
 
     this.view.updateStats(this.model.getStats());
@@ -263,7 +270,11 @@ class Controller {
 
   handleSessionSelect(idx, dim, sessionIdx, lvl) {
     const newGrade = this.model.updateSession(idx, dim, sessionIdx, lvl);
-    this.view.updateRow(idx, newGrade, this.model, this.handleSessionSelect.bind(this));
+    this.view.updateRow(idx, newGrade, this.model,
+      this.handleSessionSelect.bind(this),
+      this.handleAttendance.bind(this),
+      this.handlePoints.bind(this)
+    );
     this.view.updateStats(this.model.getStats());
 
     if (this.model.overallLevel(newGrade) === 'S') {
@@ -271,7 +282,31 @@ class Controller {
     }
     
     if (this.model.currentFileHandle) {
-      this.model.saveFile(false).catch(() => {}); // Silent auto-save
+      this.model.saveFile(false).catch(() => {});
+    }
+  }
+
+  handleAttendance(idx, sessionIdx) {
+    const newGrade = this.model.updateAttendance(idx, sessionIdx);
+    this.view.updateRow(idx, newGrade, this.model,
+      this.handleSessionSelect.bind(this),
+      this.handleAttendance.bind(this),
+      this.handlePoints.bind(this)
+    );
+    if (this.model.currentFileHandle) {
+      this.model.saveFile(false).catch(() => {});
+    }
+  }
+
+  handlePoints(idx, delta) {
+    const newGrade = this.model.updatePoints(idx, delta);
+    this.view.updateRow(idx, newGrade, this.model,
+      this.handleSessionSelect.bind(this),
+      this.handleAttendance.bind(this),
+      this.handlePoints.bind(this)
+    );
+    if (this.model.currentFileHandle) {
+      this.model.saveFile(false).catch(() => {});
     }
   }
 

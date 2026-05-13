@@ -849,6 +849,40 @@ td.col-dim-cell {
   border-radius: var(--radius-sm); color: var(--white); font-family: inherit; font-size: 1rem;
 }
 .form-group input:focus, .form-group textarea:focus { border-color: var(--accent); outline: none; }
+
+/* Input numérico de sesiones: flechas integradas al diseño */
+input[type="number"].sessions-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--white);
+}
+input[type="number"].sessions-input::-webkit-outer-spin-button,
+input[type="number"].sessions-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+/* Wrapper con botones − y + propios */
+.sessions-spin { display: flex; align-items: center; gap: 0; border-radius: 10px; overflow: hidden; border: 1.5px solid var(--border); background: var(--bg); width: fit-content; }
+.sessions-spin input[type="number"] {
+  width: 52px; padding: 8px 4px; border: none; background: transparent;
+  color: var(--white); font-size: 1.1rem; font-weight: 800; text-align: center;
+  font-family: inherit; -moz-appearance: textfield; appearance: textfield;
+}
+.sessions-spin input[type="number"]::-webkit-outer-spin-button,
+.sessions-spin input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+.sessions-spin input[type="number"]:focus { outline: none; }
+.sessions-step {
+  width: 32px; height: 38px; border: none; background: var(--bg2);
+  color: var(--fg); font-size: 1.2rem; font-weight: 800; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  user-select: none;
+}
+.sessions-step:hover { background: var(--accent); color: #fff; }
+.sessions-step:active { background: #b47aff; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; }
 .btn-cancel, .btn-save { padding: 10px 20px; border-radius: 999px; font-weight: 800; cursor: pointer; border: none; font-size: .9rem; transition: transform var(--transition), box-shadow var(--transition); }
 .btn-cancel { background: transparent; color: var(--muted); border: 2px solid var(--border); }

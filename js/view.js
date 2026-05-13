@@ -11,6 +11,7 @@ class View {
     this.renameClassModal = document.getElementById('renameClassModal');
     this.renameClassIdInput = document.getElementById('renameClassId');
     this.renameClassNameInput = document.getElementById('renameClassNameInput');
+    this.renameClassSessionsInput = document.getElementById('renameClassSessions');
     this.btnConfirmRename = document.getElementById('btnConfirmRename');
     this.btnCancelRename = document.getElementById('btnCancelRename');
 
@@ -18,8 +19,9 @@ class View {
     if (this.btnConfirmRename) this.btnConfirmRename.onclick = () => {
       const id = this.renameClassIdInput.value;
       const newName = this.renameClassNameInput.value.trim();
+      const numSesiones = parseInt(this.renameClassSessionsInput?.value) || 3;
       if (newName && this.onRenameClass) {
-        this.onRenameClass(id, newName);
+        this.onRenameClass(id, newName, numSesiones);
         this.hideRenameModal();
       }
     };
@@ -31,13 +33,25 @@ class View {
       };
     }
 
+    // Botones − / + para inputs de sesiones
+    document.querySelectorAll('.sessions-step').forEach(btn => {
+      btn.onclick = () => {
+        const input = document.getElementById(btn.dataset.target);
+        if (!input) return;
+        const delta = parseInt(btn.dataset.delta);
+        const val = Math.min(10, Math.max(1, (parseInt(input.value) || 3) + delta));
+        input.value = val;
+      };
+    });
+
     this.setupTheme();
   }
 
-  showRenameModal(id, currentName) {
+  showRenameModal(id, currentName, currentNumSesiones = 3) {
     if (!this.renameClassModal) return;
     this.renameClassIdInput.value = id;
     this.renameClassNameInput.value = currentName;
+    if (this.renameClassSessionsInput) this.renameClassSessionsInput.value = currentNumSesiones;
     this.renameClassModal.style.display = 'flex';
     setTimeout(() => this.renameClassNameInput.focus(), 100);
   }
@@ -76,6 +90,7 @@ class View {
   showAddClassModal() {
     document.getElementById('newClassName').value = '';
     document.getElementById('newClassStudents').value = '';
+    document.getElementById('newClassSessions').value = '3';
     this.addClassModal.style.display = 'flex';
   }
 
@@ -86,7 +101,8 @@ class View {
   getNewClassData() {
     return {
       name: document.getElementById('newClassName').value.trim(),
-      studentsStr: document.getElementById('newClassStudents').value.trim()
+      studentsStr: document.getElementById('newClassStudents').value.trim(),
+      numSesiones: parseInt(document.getElementById('newClassSessions').value) || 3
     };
   }
 
@@ -119,7 +135,7 @@ class View {
       editBtn.title = 'Renombrar materia';
       editBtn.onclick = (e) => {
         e.stopPropagation();
-        this.showRenameModal(cls.id, cls.name);
+        this.showRenameModal(cls.id, cls.name, cls.numSesiones || 3);
       };
       btn.appendChild(editBtn);
 
@@ -139,8 +155,9 @@ class View {
     });
   }
 
-  renderTable(students, grades, model, onSessionSelect, onAttendance, onPoints) {
+  renderTable(students, grades, model, onSessionSelect, onAttendance, onPoints, numSesiones = 3) {
     this.tableBody.innerHTML = '';
+    this.numSesiones = numSesiones; // guardado para updateRow
     if (!students || students.length === 0) return;
 
     students.forEach((name, idx) => {
@@ -150,14 +167,14 @@ class View {
       const tdName = document.createElement('td');
       tdName.className = 'col-student';
       tdName.id = `student-cell-${idx}`;
-      tdName.innerHTML = this.buildStudentCellHtml(idx, name, grades[idx]);
+      tdName.innerHTML = this.buildStudentCellHtml(idx, name, grades[idx], numSesiones);
       tr.appendChild(tdName);
 
       CONFIG.DIMS.forEach(dim => {
         const td = document.createElement('td');
         td.className = 'col-dim-cell';
         td.id = `dim-${idx}-${dim}`;
-        td.innerHTML = this.buildDimCellHtml(idx, dim, grades[idx][dim], model);
+        td.innerHTML = this.buildDimCellHtml(idx, dim, grades[idx][dim], model, numSesiones);
         tr.appendChild(td);
       });
 
@@ -175,17 +192,19 @@ class View {
   }
 
   updateRow(idx, grade, model, onSessionSelect, onAttendance, onPoints) {
+    const numSesiones = this.numSesiones || 3;
+
     const tdName = document.getElementById(`student-cell-${idx}`);
     if (tdName) {
       const nameEl = tdName.querySelector('.student-name');
       const name = nameEl ? nameEl.textContent : '';
-      tdName.innerHTML = this.buildStudentCellHtml(idx, name, grade);
+      tdName.innerHTML = this.buildStudentCellHtml(idx, name, grade, numSesiones);
       this.attachStudentListeners(tdName, onAttendance, onPoints);
     }
 
     CONFIG.DIMS.forEach(dim => {
       const td = document.getElementById(`dim-${idx}-${dim}`);
-      td.innerHTML = this.buildDimCellHtml(idx, dim, grade[dim], model);
+      td.innerHTML = this.buildDimCellHtml(idx, dim, grade[dim], model, numSesiones);
     });
     
     document.getElementById(`total-${idx}`).innerHTML = this.buildTotalHtml(grade, model, idx);
@@ -195,11 +214,12 @@ class View {
     this.attachGradeListeners(tr, onSessionSelect);
   }
 
-  buildStudentCellHtml(idx, name, grade) {
+  buildStudentCellHtml(idx, name, grade, numSesiones = 3) {
     const att = grade.asistencia || [null, null, null];
     const pts = grade.puntos || 0;
 
-    const attBtns = att.map((a, si) => {
+    // Padding dinámico para asistencia igual que en dimensiones
+    const attBtns = Array.from({ length: numSesiones }, (_, i) => att[i] ?? null).map((a, si) => {
       const absent = a === 'A';
       const cls    = absent ? 'att-btn att-absent' : 'att-btn att-present';
       const icon   = absent ? '✗' : '✓';
@@ -259,11 +279,13 @@ class View {
     });
   }
 
-  buildDimCellHtml(idx, dim, sessions, model) {
-    const eff = model.effectiveForDim(sessions);
-    const code = sessions.map(g => g || '·').join('');
+  buildDimCellHtml(idx, dim, sessions, model, numSesiones = 3) {
+    // Padding dinámico: el array de datos puede tener menos slots que numSesiones
+    const activeSessions = Array.from({ length: numSesiones }, (_, i) => sessions[i] ?? null);
+    const eff  = model.effectiveForDim(activeSessions);
+    const code = activeSessions.map(g => g || '·').join('');
 
-    const rows = sessions.map((g, si) => {
+    const rows = activeSessions.map((g, si) => {
       const buttons = CONFIG.LEVELS.map(lvl => {
         const isSelected = g === lvl;
         const selCls = isSelected ? `sel-${lvl.toLowerCase()}` : '';
@@ -277,9 +299,11 @@ class View {
       </div>`;
     }).join('');
 
-    const codeHtml = eff
+    // El badge de calificación efectiva solo aparece cuando TODAS las sesiones están calificadas
+    const allFilled = activeSessions.every(g => g !== null && g !== '');
+    const codeHtml = (eff && allFilled)
       ? `<div class="dim-code"><span class="dim-code-letters">${code}</span><span class="dim-eff-badge eff-${eff.toLowerCase()}">${CONFIG.LEVEL_EMOJI[eff]} ${CONFIG.LEVEL_LABEL[eff]}</span></div>`
-      : `<div class="dim-code dim-code-empty"><span class="dim-code-letters">· · ·</span></div>`;
+      : `<div class="dim-code dim-code-empty"><span class="dim-code-letters">${code}</span></div>`;
 
     return `<div class="dim-cell-inner">${rows}${codeHtml}</div>`;
   }

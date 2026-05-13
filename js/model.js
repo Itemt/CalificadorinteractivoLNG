@@ -53,9 +53,9 @@ class Model {
     return this.appData.grades[this.currentPeriod][this.currentClass];
   }
 
-  addClass(name, students) {
+  addClass(name, students, numSesiones = 3) {
     const id = 'class_' + Date.now();
-    this.appData.classes[id] = { id, name, students };
+    this.appData.classes[id] = { id, name, students, numSesiones };
     
     CONFIG.PERIODS.forEach(p => {
       this.appData.grades[p.id][id] = students.map(() => this.emptyGrade());
@@ -78,9 +78,18 @@ class Model {
     return 'S';
   }
 
-  // Valoración por periodo (la peor nota prevalece)
-  overallLevel(grade) {
-    const effs = CONFIG.DIMS.map(d => this.effectiveForDim(grade[d])).filter(Boolean);
+  // Valoración por periodo (la peor nota prevalece).
+  // Solo califica si TODAS las sesiones de TODAS las dimensiones están llenas.
+  overallLevel(grade, numSesiones) {
+    const n = numSesiones || this.getCurrentClassData()?.numSesiones || 3;
+    // Verificar que todas las sesiones de todas las dims están llenas
+    for (const d of CONFIG.DIMS) {
+      const sessions = grade[d] || [];
+      for (let i = 0; i < n; i++) {
+        if (!sessions[i]) return null; // sesión vacía → sin calificación
+      }
+    }
+    const effs = CONFIG.DIMS.map(d => this.effectiveForDim((grade[d] || []).slice(0, n))).filter(Boolean);
     if (effs.length === 0) return null;
     if (effs.includes('P')) return 'P';
     if (effs.includes('A')) return 'A';
@@ -118,14 +127,17 @@ class Model {
 
   updateSession(studentIdx, dim, sessionIdx, lvl) {
     const grades = this.getGrades();
-    const sessions = grades[studentIdx][dim];
-    sessions[sessionIdx] = (sessions[sessionIdx] === lvl) ? null : lvl;
+    const arr = grades[studentIdx][dim];
+    // Expandir array si el índice está fuera del rango actual
+    while (arr.length <= sessionIdx) arr.push(null);
+    arr[sessionIdx] = (arr[sessionIdx] === lvl) ? null : lvl;
     return grades[studentIdx];
   }
 
   updateAttendance(studentIdx, sessionIdx) {
     const grades = this.getGrades();
-    const att = grades[studentIdx].asistencia || [null, null, null];
+    const att = grades[studentIdx].asistencia || [];
+    while (att.length <= sessionIdx) att.push(null);
     att[sessionIdx] = att[sessionIdx] === 'A' ? null : 'A';
     grades[studentIdx].asistencia = att;
     return grades[studentIdx];
@@ -141,10 +153,12 @@ class Model {
     let filledCount = 0;
     const students = this.getStudents();
     const grades = this.getGrades();
+    const numSesiones = this.getCurrentClassData()?.numSesiones || 3;
     
     students.forEach((name, idx) => {
       const sessions = grades[idx][dim];
-      const emptyIdx = sessions.findIndex(g => g === null);
+      // Solo llenar hasta numSesiones
+      const emptyIdx = sessions.findIndex((g, i) => g === null && i < numSesiones);
       if (emptyIdx !== -1) {
         sessions[emptyIdx] = lvl;
         filledCount++;
@@ -156,9 +170,13 @@ class Model {
   // --- CSV LOGIC ---
 
   generateCSV() {
-    const lines = ['ClaseId,NombreClase,Periodo,Estudiante,Conceptos_1,Conceptos_2,Conceptos_3,Practica_1,Practica_2,Practica_3,Comportamiento_1,Comportamiento_2,Comportamiento_3,Autoevaluacion_1,Autoevaluacion_2,Autoevaluacion_3,Asistencia_1,Asistencia_2,Asistencia_3,Puntos'];
+    // Encabezado descriptivo — las columnas de sesión varían por clase según NumSesiones
+    const lines = ['ClaseId,NombreClase,NumSesiones,Periodo,Estudiante,[Conceptos x N],[Practica x N],[Comportamiento x N],[Autoevaluacion x N],[Asistencia x N],Puntos'];
     
+    const pad = (arr, n) => Array.from({ length: n }, (_, i) => arr[i] || '');
+
     Object.values(this.appData.classes).forEach(cls => {
+      const n = cls.numSesiones || 3;
       CONFIG.PERIODS.forEach(period => {
         const periodId = period.id;
         const gradesForPeriod = this.appData.grades[periodId][cls.id];
@@ -168,19 +186,19 @@ class Model {
           const g = gradesForPeriod[idx];
           if (!g) return;
           
-          const cleanName = studentName.replace(/"/g, '""');
+          const cleanName      = studentName.replace(/"/g, '""');
           const cleanClassName = cls.name.replace(/"/g, '""');
-          const att = g.asistencia || [null, null, null];
           const row = [
             cls.id,
             `"${cleanClassName}"`,
+            n,
             periodId,
             `"${cleanName}"`,
-            g.conceptos[0] || '', g.conceptos[1] || '', g.conceptos[2] || '',
-            g.practica[0] || '', g.practica[1] || '', g.practica[2] || '',
-            g.comportamiento[0] || '', g.comportamiento[1] || '', g.comportamiento[2] || '',
-            (g.autoevaluacion||[null,null,null])[0] || '', (g.autoevaluacion||[null,null,null])[1] || '', (g.autoevaluacion||[null,null,null])[2] || '',
-            att[0] || '', att[1] || '', att[2] || '',
+            ...pad(g.conceptos        || [], n),
+            ...pad(g.practica         || [], n),
+            ...pad(g.comportamiento   || [], n),
+            ...pad(g.autoevaluacion   || [], n),
+            ...pad(g.asistencia       || [], n),
             g.puntos || 0
           ];
           lines.push(row.join(','));
@@ -213,19 +231,41 @@ class Model {
     
     const dataLines = lines.slice(1);
     const newAppData = this.createEmptyData();
+    const PERIOD_IDS = new Set(['inicial', 'basico', 'alto', 'superior']);
 
     dataLines.forEach(line => {
       const cols = this.parseCSVRow(line);
       if (cols.length < 13) return; // invalid row
 
-      const [classId, className, period, studentName, c1, c2, c3, p1, p2, p3, b1, b2, b3, ae1, ae2, ae3,
-             att1, att2, att3, ptsRaw] = cols;
-      
+      // Detectar formato: si cols[2] es un ID de periodo → formato antiguo (sin NumSesiones)
+      const isOldFormat = PERIOD_IDS.has(cols[2]);
+      const offset = isOldFormat ? 0 : 1; // columnas desplazadas por NumSesiones
+
+      const classId     = cols[0];
+      const className   = cols[1];
+      const numSesiones = isOldFormat ? 3 : (parseInt(cols[2]) || 3);
+      const period      = cols[2 + offset];
+      const studentName = cols[3 + offset];
+
+      // Columnas de sesión: base=4+offset, luego 5 bloques de numSesiones + Puntos
+      const base = 4 + offset;
+      const slice = (start) => Array.from({ length: numSesiones }, (_, i) => cols[start + i] || null);
+
+      const cArr  = slice(base);
+      const pArr  = slice(base + numSesiones);
+      const bArr  = slice(base + numSesiones * 2);
+      const aeArr = slice(base + numSesiones * 3);
+      const attArr= slice(base + numSesiones * 4);
+      const ptsRaw = cols[base + numSesiones * 5];
+
       if (!newAppData.classes[classId]) {
-        newAppData.classes[classId] = { id: classId, name: className, students: [] };
+        newAppData.classes[classId] = { id: classId, name: className, students: [], numSesiones };
         CONFIG.PERIODS.forEach(p => {
           newAppData.grades[p.id][classId] = [];
         });
+      } else if (!newAppData.classes[classId].numSesiones) {
+        // Actualizar numSesiones si vemos un valor más reciente
+        newAppData.classes[classId].numSesiones = numSesiones;
       }
       
       const cls = newAppData.classes[classId];
@@ -234,7 +274,6 @@ class Model {
       if (studentIdx === -1) {
         cls.students.push(studentName);
         studentIdx = cls.students.length - 1;
-        // init empty grades for all periods for this student
         CONFIG.PERIODS.forEach(p => {
           newAppData.grades[p.id][classId].push(this.emptyGrade());
         });
@@ -242,11 +281,11 @@ class Model {
       
       if (newAppData.grades[period] && newAppData.grades[period][classId]) {
         newAppData.grades[period][classId][studentIdx] = {
-          conceptos: [c1||null, c2||null, c3||null],
-          practica: [p1||null, p2||null, p3||null],
-          comportamiento: [b1||null, b2||null, b3||null],
-          autoevaluacion: [ae1||null, ae2||null, ae3||null],
-          asistencia: [att1||null, att2||null, att3||null],
+          conceptos:       cArr.map(v => v || null),
+          practica:        pArr.map(v => v || null),
+          comportamiento:  bArr.map(v => v || null),
+          autoevaluacion:  aeArr.map(v => v || null),
+          asistencia:      attArr.map(v => v || null),
           puntos: parseInt(ptsRaw) || 0
         };
       }
@@ -496,9 +535,12 @@ class Model {
     this.currentClass = null;
   }
 
-  renameClass(id, newName) {
+  renameClass(id, newName, numSesiones) {
     if (this.appData.classes[id]) {
       this.appData.classes[id].name = newName;
+      if (numSesiones && numSesiones >= 1) {
+        this.appData.classes[id].numSesiones = numSesiones;
+      }
       return true;
     }
     return false;

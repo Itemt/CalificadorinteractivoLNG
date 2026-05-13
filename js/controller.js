@@ -63,7 +63,7 @@ class Controller {
       {
         target: '#classTabs',
         title: '🏫 Tus Materias',
-        text: 'Aquí aparecerán todas las materias o clases que crees. Usa el botón "Agregar Materia" para añadir nuevas.'
+        text: 'Aquí aparecen todas tus materias. Usa "Agregar Materia" para crear una nueva y define cuántas clases tendrá por nivel. Haz clic en el ✏️ de cualquier materia para editarla o cambiar su número de clases en cualquier momento.'
       },
       {
         target: '.header-actions',
@@ -72,13 +72,13 @@ class Controller {
       },
       {
         target: '.period-tabs',
-        title: '⏳ Periodos de Tiempo',
-        text: 'Cada nivel (Inicial, Básico, Nivel Alto, Superior) tiene su propio historial de notas independiente.'
+        title: '📊 Niveles de Desempeño',
+        text: 'Inicial, Básico, Alto y Superior son los cuatro niveles de evaluación. Cada uno guarda su propio historial de notas de forma independiente.'
       },
       {
         target: '.student-extras',
         title: '📋 Asistencia y Puntos',
-        text: 'En cada fila: los 3 círculos numerados marcan la asistencia por sesión (verde = presente, rojo = ausente). Los botones ＋ y − acumulan puntos positivos o negativos para el estudiante durante el periodo.'
+        text: 'Los botones numerados registran la asistencia por clase (verde = presente, rojo = ausente). El número de botones refleja las clases configuradas para esta materia. Los botones ＋ y − acumulan puntos positivos o negativos en el nivel actual.'
       },
       {
         target: '.action-row',
@@ -121,10 +121,10 @@ class Controller {
       this.view.showSaveNameModal(defaultName, note);
 
     // Rename class callback (siempre activo)
-    this.view.onRenameClass = (id, newName) => {
-      if (this.model.renameClass(id, newName)) {
+    this.view.onRenameClass = (id, newName, numSesiones) => {
+      if (this.model.renameClass(id, newName, numSesiones)) {
         this.refreshView();
-        this.view.showToast('✅ Materia renombrada');
+        this.view.showToast('✅ Materia actualizada');
         this.model.autoSave();
       }
     };
@@ -177,13 +177,15 @@ class Controller {
       this.handlePeriodSelect.bind(this)
     );
 
+    const numSesiones = this.model.getCurrentClassData()?.numSesiones || 3;
     this.view.renderTable(
       this.model.getStudents(),
       this.model.getGrades(),
       this.model,
       this.handleSessionSelect.bind(this),
       this.handleAttendance.bind(this),
-      this.handlePoints.bind(this)
+      this.handlePoints.bind(this),
+      numSesiones
     );
 
     this.view.updateStats(this.model.getStats());
@@ -259,7 +261,7 @@ class Controller {
     }
     
     const students = data.studentsStr.split('\n').map(s => s.trim()).filter(Boolean);
-    this.model.addClass(data.name, students);
+    this.model.addClass(data.name, students, data.numSesiones);
     
     this.view.hideAddClassModal();
     this.view.showToast(`✅ Materia ${data.name} agregada`);

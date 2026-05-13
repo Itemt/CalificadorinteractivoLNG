@@ -38,6 +38,17 @@
         <input type="text" id="newClassName" placeholder="Nombre visible..." />
       </div>
       <div class="form-group">
+        <label>Clases por Nivel</label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="sessions-spin">
+            <button type="button" class="sessions-step" data-target="newClassSessions" data-delta="-1">−</button>
+            <input type="number" id="newClassSessions" min="1" max="10" value="3" />
+            <button type="button" class="sessions-step" data-target="newClassSessions" data-delta="1">+</button>
+          </div>
+          <span style="font-size:0.82rem;color:var(--fg2);">¿Cuántas clases se evalúan en cada nivel?</span>
+        </div>
+      </div>
+      <div class="form-group">
         <label>Lista de Estudiantes (Un nombre por línea, presiona Enter entre cada uno)</label>
         <textarea id="newClassStudents" rows="6" placeholder="Juan Pérez
 Ana López
@@ -71,11 +82,22 @@ Carlos Gómez
   <!-- ===== RENAME CLASS MODAL ===== -->
   <div id="renameClassModal" class="modal-overlay" style="display:none;">
     <div class="modal-card">
-      <h3>✏️ Renombrar Materia</h3>
+      <h3>✏️ Editar Materia</h3>
       <input type="hidden" id="renameClassId" />
       <div class="form-group">
-        <label>Nuevo nombre de la materia</label>
+        <label>Nombre de la materia</label>
         <input type="text" id="renameClassNameInput" placeholder="Nombre de la materia..." />
+      </div>
+      <div class="form-group">
+        <label>Clases por Nivel</label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="sessions-spin">
+            <button type="button" class="sessions-step" data-target="renameClassSessions" data-delta="-1">−</button>
+            <input type="number" id="renameClassSessions" min="1" max="10" value="3" />
+            <button type="button" class="sessions-step" data-target="renameClassSessions" data-delta="1">+</button>
+          </div>
+          <span style="font-size:0.82rem;color:var(--fg2);">Clases evaluadas por nivel</span>
+        </div>
       </div>
       <div class="modal-actions">
         <button id="btnCancelRename" class="btn-cancel">Cancelar</button>

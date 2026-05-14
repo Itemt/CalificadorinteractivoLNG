@@ -78,7 +78,7 @@ class Controller {
       {
         target: '.student-extras',
         title: '📋 Asistencia y Puntos',
-        text: 'Los botones numerados registran la asistencia por clase (verde = presente, rojo = ausente). El número de botones refleja las clases configuradas para esta materia. Los botones ＋ y − acumulan puntos positivos o negativos en el nivel actual. La etiqueta "Asistencia" y los botones mantienen espacio para que no se encimen.'
+        text: 'Los botones numerados registran la asistencia por clase (verde = presente, rojo = ausente). Los botones ＋ y − son puntos por nivel. El botón «Notas» abre observaciones opcionales (por ejemplo si quedó en Alto o En proceso); no ensancha la tabla y se guardan en el CSV.'
       },
       {
         target: '#gradingTable',
@@ -190,6 +190,7 @@ class Controller {
       this.handleSessionSelect.bind(this),
       this.handleAttendance.bind(this),
       this.handlePoints.bind(this),
+      this.handleObservaciones.bind(this),
       numSesiones
     );
 
@@ -280,7 +281,8 @@ class Controller {
     this.view.updateRow(idx, newGrade, this.model,
       this.handleSessionSelect.bind(this),
       this.handleAttendance.bind(this),
-      this.handlePoints.bind(this)
+      this.handlePoints.bind(this),
+      this.handleObservaciones.bind(this)
     );
     this.view.updateStats(this.model.getStats());
 
@@ -298,7 +300,8 @@ class Controller {
     this.view.updateRow(idx, newGrade, this.model,
       this.handleSessionSelect.bind(this),
       this.handleAttendance.bind(this),
-      this.handlePoints.bind(this)
+      this.handlePoints.bind(this),
+      this.handleObservaciones.bind(this)
     );
     if (this.model.currentFileHandle) {
       this.model.saveFile(false).catch(() => {});
@@ -310,10 +313,35 @@ class Controller {
     this.view.updateRow(idx, newGrade, this.model,
       this.handleSessionSelect.bind(this),
       this.handleAttendance.bind(this),
-      this.handlePoints.bind(this)
+      this.handlePoints.bind(this),
+      this.handleObservaciones.bind(this)
     );
     if (this.model.currentFileHandle) {
       this.model.saveFile(false).catch(() => {});
+    }
+  }
+
+  async handleObservaciones(idx) {
+    const students = this.model.getStudents();
+    const name = students[idx];
+    if (name == null) return;
+    const cur = (this.model.getGrades()[idx].observaciones || '');
+    const result = await this.view.showObsModal(name, cur);
+    if (result === null) return;
+    const trimmed = String(result).trim();
+    const prev = String(cur).trim();
+    const newGrade = this.model.updateObservaciones(idx, result);
+    this.view.updateRow(idx, newGrade, this.model,
+      this.handleSessionSelect.bind(this),
+      this.handleAttendance.bind(this),
+      this.handlePoints.bind(this),
+      this.handleObservaciones.bind(this)
+    );
+    if (this.model.currentFileHandle) {
+      this.model.saveFile(false).catch(() => {});
+    }
+    if (trimmed !== prev) {
+      this.view.showToast('📝 Observaciones guardadas');
     }
   }
 

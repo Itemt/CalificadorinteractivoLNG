@@ -33,6 +33,21 @@ class View {
       };
     }
 
+    // Modal observaciones (por estudiante / nivel)
+    this.obsModal = document.getElementById('obsModal');
+    this.obsModalText = document.getElementById('obsModalText');
+    this.obsModalStudent = document.getElementById('obsModalStudent');
+    this.btnCancelObs = document.getElementById('btnCancelObs');
+    this.btnSaveObs = document.getElementById('btnSaveObs');
+    this._obsResolve = null;
+    if (this.btnCancelObs) this.btnCancelObs.onclick = () => this._finishObsModal(null);
+    if (this.btnSaveObs) this.btnSaveObs.onclick = () => this._finishObsModal(this.obsModalText.value);
+    if (this.obsModalText) {
+      this.obsModalText.onkeydown = (e) => {
+        if (e.key === 'Escape') this._finishObsModal(null);
+      };
+    }
+
     // Botones − / + para inputs de sesiones
     document.querySelectorAll('.sessions-step').forEach(btn => {
       btn.onclick = () => {
@@ -54,6 +69,33 @@ class View {
     if (this.renameClassSessionsInput) this.renameClassSessionsInput.value = currentNumSesiones;
     this.renameClassModal.style.display = 'flex';
     setTimeout(() => this.renameClassNameInput.focus(), 100);
+  }
+
+  _finishObsModal(result) {
+    if (!this.obsModal) return;
+    this.obsModal.style.display = 'none';
+    if (this._obsResolve) {
+      const r = this._obsResolve;
+      this._obsResolve = null;
+      r(result);
+    }
+  }
+
+  showObsModal(studentName, currentText) {
+    return new Promise((resolve) => {
+      if (!this.obsModal || !this.obsModalText) {
+        resolve(null);
+        return;
+      }
+      this._obsResolve = resolve;
+      if (this.obsModalStudent) this.obsModalStudent.textContent = studentName;
+      this.obsModalText.value = currentText || '';
+      this.obsModal.style.display = 'flex';
+      setTimeout(() => {
+        this.obsModalText.focus();
+        this.obsModalText.selectionStart = this.obsModalText.value.length;
+      }, 80);
+    });
   }
 
   hideRenameModal() {
@@ -155,7 +197,7 @@ class View {
     });
   }
 
-  renderTable(students, grades, model, onSessionSelect, onAttendance, onPoints, numSesiones = 3) {
+  renderTable(students, grades, model, onSessionSelect, onAttendance, onPoints, onOpenObservaciones, numSesiones = 3) {
     this.tableBody.innerHTML = '';
     this.numSesiones = numSesiones; // guardado para updateRow
     this.currentGrades = grades;   // guardado para refrescar highlights de puntos
@@ -168,7 +210,7 @@ class View {
       const tdName = document.createElement('td');
       tdName.className = 'col-student';
       tdName.id = `student-cell-${idx}`;
-      tdName.innerHTML = this.buildStudentCellHtml(idx, name, grades[idx], numSesiones);
+      tdName.innerHTML = this.buildStudentCellHtml(idx, name, grades[idx], numSesiones, model);
       tr.appendChild(tdName);
 
       CONFIG.DIMS.forEach(dim => {
@@ -189,11 +231,11 @@ class View {
     });
 
     this.attachGradeListeners(this.tableBody, onSessionSelect);
-    this.attachStudentListeners(this.tableBody, onAttendance, onPoints);
+    this.attachStudentListeners(this.tableBody, onAttendance, onPoints, onOpenObservaciones);
     this.applyPointsHighlights(grades);
   }
 
-  updateRow(idx, grade, model, onSessionSelect, onAttendance, onPoints) {
+  updateRow(idx, grade, model, onSessionSelect, onAttendance, onPoints, onOpenObservaciones) {
     const numSesiones = this.numSesiones || 3;
 
     // Mantener currentGrades sincronizado para highlights de puntos
@@ -203,8 +245,8 @@ class View {
     if (tdName) {
       const nameEl = tdName.querySelector('.student-name');
       const name = nameEl ? nameEl.textContent : '';
-      tdName.innerHTML = this.buildStudentCellHtml(idx, name, grade, numSesiones);
-      this.attachStudentListeners(tdName, onAttendance, onPoints);
+      tdName.innerHTML = this.buildStudentCellHtml(idx, name, grade, numSesiones, model);
+      this.attachStudentListeners(tdName, onAttendance, onPoints, onOpenObservaciones);
     }
 
     CONFIG.DIMS.forEach(dim => {
@@ -220,9 +262,17 @@ class View {
     if (this.currentGrades) this.applyPointsHighlights(this.currentGrades);
   }
 
-  buildStudentCellHtml(idx, name, grade, numSesiones = 3) {
+  buildStudentCellHtml(idx, name, grade, numSesiones = 3, model = null) {
     const att = grade.asistencia || [null, null, null];
     const pts = grade.puntos || 0;
+    const obs = (grade.observaciones || '').trim();
+    const overall = model ? model.overallLevel(grade) : null;
+    const obsHint = overall === 'A' || overall === 'P'
+      ? 'Opcional: por qué quedó en Alto o En proceso en este nivel'
+      : 'Notas sobre este estudiante en este nivel (opcional)';
+    const obsClasses = ['btn-obs'];
+    if (obs) obsClasses.push('btn-obs-filled');
+    else if (overall === 'A' || overall === 'P') obsClasses.push('btn-obs-hint');
 
     // Padding dinámico para asistencia igual que en dimensiones
     const attBtns = Array.from({ length: numSesiones }, (_, i) => att[i] ?? null).map((a, si) => {
@@ -255,6 +305,10 @@ class View {
             <button class="pts-btn pts-plus" data-idx="${idx}" data-delta="1" title="Punto positivo">+</button>
           </div>
         </div>
+        <div class="extra-row">
+          <span class="extra-lbl">📝 Obs.</span>
+          <button type="button" class="${obsClasses.join(' ')}" data-idx="${idx}" title="${obsHint.replace(/"/g, '&quot;')}">Notas</button>
+        </div>
       </div>`;
   }
 
@@ -270,7 +324,7 @@ class View {
     });
   }
 
-  attachStudentListeners(container, onAttendance, onPoints) {
+  attachStudentListeners(container, onAttendance, onPoints, onOpenObservaciones) {
     container.querySelectorAll('.att-btn').forEach(btn => {
       btn.onclick = (e) => {
         e.stopPropagation();
@@ -281,6 +335,12 @@ class View {
       btn.onclick = (e) => {
         e.stopPropagation();
         onPoints(parseInt(e.currentTarget.dataset.idx), parseInt(e.currentTarget.dataset.delta));
+      };
+    });
+    container.querySelectorAll('.btn-obs').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        if (onOpenObservaciones) onOpenObservaciones(parseInt(e.currentTarget.dataset.idx));
       };
     });
   }

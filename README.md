@@ -27,7 +27,7 @@ Una aplicación de escritorio rápida, **100% offline** y amigable, diseñada pa
 - **Calificación Rápida:** Botones de relleno automático (P/A/S) en la cabecera de cada columna para asignar un nivel a toda la clase de un solo clic.
 - **Tour Guiado:** Onboarding paso a paso integrado que inicia automáticamente al crear tu primer archivo y puede repetirse desde el botón "Tour Guiado".
 - **Modo Oscuro / Claro:** Disponible desde la pantalla de inicio y desde la app.
-- **Exportar resumen:** Copia un reporte de texto plano al portapapeles para pegar en chats o correos, incluyendo asistencia y puntos.
+- **Observaciones (opcional):** por cada estudiante y cada nivel puede abrir «Notas» y escribir un comentario (por ejemplo por qué quedó en Alto o En proceso). Se abre en un modal para no ensanchar la tabla; se guarda al final de la fila en el CSV. Los archivos viejos sin esa columna siguen abriendo bien.
 
 ---
 
@@ -37,7 +37,7 @@ Dirígete a la pestaña de [**Releases**](../../releases/latest) de este reposit
 
 ### Windows
 
-1. Descarga `Calificador Interactivo Setup 1.2.2.exe`.
+1. Descarga `Calificador Interactivo Setup 1.3.0.exe`.
 2. Ejecútalo. El instalador **no requiere permisos de administrador** y se instala por usuario.
 3. Se crearán accesos directos en el **Escritorio** y el **Menú de Inicio** automáticamente.
 
@@ -52,7 +52,7 @@ Al ser software independiente sin firma de código comercial, Windows puede most
 
 ### macOS
 
-1. Descarga `Calificador Interactivo-1.2.2.dmg`.
+1. Descarga `Calificador Interactivo-1.3.0.dmg`.
 2. Ábrelo y arrastra el ícono a tu carpeta **Aplicaciones**.
 3. La primera vez, haz clic derecho → *Abrir* si macOS muestra una advertencia de desarrollador no verificado.
 
@@ -67,14 +67,15 @@ Al ser software independiente sin firma de código comercial, Windows puede most
 5. **Asistencia** → Usa los botones ✓/✗ por sesión en la columna del estudiante.
 6. **Puntos** → Usa ＋ y − para acumular puntos positivos/negativos por nivel.
 7. **Editar Materia** → Haz clic en ✏️ sobre cualquier pestaña para renombrar o cambiar el número de clases por nivel.
-8. **Guardar** → Usa *Guardar BD* para guardar en el mismo archivo o *Exportar BD* para crear una copia. El autoguardado actúa cada 60 segundos.
-9. **Exportar resumen** → Usa *Copiar a portapapeles* para pegar el reporte en un chat o correo.
+8. **Observaciones** → Botón «Notas» junto a puntos: texto opcional por estudiante y nivel; útil para Alto/En proceso.
+9. **Guardar** → Usa *Guardar BD* para guardar en el mismo archivo o *Exportar BD* para crear una copia. El autoguardado actúa cada 60 segundos.
+10. **Exportar resumen** → Usa *Copiar a portapapeles* para pegar el reporte en un chat o correo.
 
 ---
 
 ## 🔄 Compatibilidad con versiones anteriores
 
-Los archivos `.csv` creados con versiones anteriores de la aplicación **funcionan sin modificaciones**. Al abrirlos, la app detecta automáticamente el formato antiguo y asigna 3 sesiones por nivel a cada materia. El profesor puede luego editar el número de sesiones con el ✏️ sin perder ningún dato.
+Los archivos `.csv` creados con versiones anteriores de la aplicación **funcionan sin modificaciones**. Al abrirlos, la app detecta automáticamente el formato antiguo y asigna 3 sesiones por nivel a cada materia. El profesor puede luego editar el número de sesiones con el ✏️ sin perder ningún dato. Si el archivo no trae la columna **Observaciones**, se asume vacía para todos.
 
 ---
 

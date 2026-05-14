@@ -25,7 +25,8 @@ class Model {
       comportamiento: [null, null, null],
       autoevaluacion: [null, null, null],
       asistencia: [null, null, null], // null = presente, 'A' = ausente
-      puntos: 0
+      puntos: 0,
+      observaciones: '' // texto libre por nivel (opcional); útil en Alto / En proceso
     };
   }
 
@@ -140,6 +141,12 @@ class Model {
     return grades[studentIdx];
   }
 
+  updateObservaciones(studentIdx, text) {
+    const grades = this.getGrades();
+    grades[studentIdx].observaciones = String(text || '').trim();
+    return grades[studentIdx];
+  }
+
   fillAllDimension(dim, lvl) {
     let filledCount = 0;
     const students = this.getStudents();
@@ -166,7 +173,7 @@ class Model {
 
   generateCSV() {
     // Encabezado descriptivo — las columnas de sesión varían por clase según NumSesiones
-    const lines = ['ClaseId,NombreClase,NumSesiones,Periodo,Estudiante,[Conceptos x N],[Practica x N],[Comportamiento x N],[Autoevaluacion x N],[Asistencia x N],Puntos'];
+    const lines = ['ClaseId,NombreClase,NumSesiones,Periodo,Estudiante,[Conceptos x N],[Practica x N],[Comportamiento x N],[Autoevaluacion x N],[Asistencia x N],Puntos,Observaciones'];
     
     const pad = (arr, n) => Array.from({ length: n }, (_, i) => arr[i] || '');
 
@@ -183,6 +190,7 @@ class Model {
           
           const cleanName      = studentName.replace(/"/g, '""');
           const cleanClassName = cls.name.replace(/"/g, '""');
+          const obsRaw = (g.observaciones || '').replace(/"/g, '""');
           const row = [
             cls.id,
             `"${cleanClassName}"`,
@@ -194,7 +202,8 @@ class Model {
             ...pad(g.comportamiento   || [], n),
             ...pad(g.autoevaluacion   || [], n),
             ...pad(g.asistencia       || [], n),
-            g.puntos || 0
+            g.puntos || 0,
+            `"${obsRaw}"`
           ];
           lines.push(row.join(','));
         });
@@ -251,7 +260,11 @@ class Model {
       const bArr  = slice(base + numSesiones * 2);
       const aeArr = slice(base + numSesiones * 3);
       const attArr= slice(base + numSesiones * 4);
-      const ptsRaw = cols[base + numSesiones * 5];
+      const ptsIdx = base + numSesiones * 5;
+      if (cols.length <= ptsIdx) return;
+
+      const ptsRaw = cols[ptsIdx];
+      const observaciones = cols.length > ptsIdx + 1 ? (cols[ptsIdx + 1] || '').replace(/""/g, '"') : '';
 
       if (!newAppData.classes[classId]) {
         newAppData.classes[classId] = { id: classId, name: className, students: [], numSesiones };
@@ -281,7 +294,8 @@ class Model {
           comportamiento:  bArr.map(v => v || null),
           autoevaluacion:  aeArr.map(v => v || null),
           asistencia:      attArr.map(v => v || null),
-          puntos: parseInt(ptsRaw) || 0
+          puntos: parseInt(ptsRaw, 10) || 0,
+          observaciones: observaciones || ''
         };
       }
     });
@@ -591,6 +605,11 @@ class Model {
       const ptsStr = pts > 0 ? `+${pts}` : `${pts}`;
 
       lines.push(`${name.substring(0, 33).padEnd(34)} ${fmtDim('conceptos')}${fmtDim('practica')}${fmtDim('comportamiento')}${overallStr}${attStr.padEnd(8)}  ${ptsStr}`);
+      const obs = (g.observaciones || '').trim();
+      if (obs) {
+        const oneLine = obs.replace(/\s+/g, ' ').trim();
+        lines.push(`   · Notas: ${oneLine.length > 200 ? oneLine.slice(0, 200) + '…' : oneLine}`);
+      }
     });
 
     lines.push(sep);

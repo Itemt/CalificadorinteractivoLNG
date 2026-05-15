@@ -157,20 +157,39 @@ class Model {
     const grades = this.getGrades();
     const numSesiones = this.getCurrentClassData()?.numSesiones || 3;
     
+    // 1. Encontrar la sesión "objetivo" global de la clase
+    // Es la primera columna donde al menos un estudiante presente aún no tiene nota
+    let targetIdx = -1;
+    for (let i = 0; i < numSesiones; i++) {
+      let needsGrading = false;
+      for (let idx = 0; idx < students.length; idx++) {
+        const sessions = grades[idx][dim] || [];
+        const asistencia = grades[idx].asistencia || [];
+        if (!sessions[i] && asistencia[i] !== 'A') {
+          needsGrading = true;
+          break;
+        }
+      }
+      if (needsGrading) {
+        targetIdx = i;
+        break;
+      }
+    }
+
+    if (targetIdx === -1) return 0; // Todo está lleno o todos faltaron a lo que queda
+    
+    // 2. Llenar SOLO en targetIdx para los estudiantes presentes
     students.forEach((name, idx) => {
       const sessions = grades[idx][dim];
       const asistencia = grades[idx].asistencia || [];
-      // Buscar primer slot vacío dentro de numSesiones, expandiendo el array si es necesario, excluyendo ausencias
-      let emptyIdx = -1;
-      for (let i = 0; i < numSesiones; i++) {
-        if (!sessions[i] && asistencia[i] !== 'A') { emptyIdx = i; break; }
-      }
-      if (emptyIdx !== -1) {
-        while (sessions.length <= emptyIdx) sessions.push(null);
-        sessions[emptyIdx] = lvl;
+      
+      if (!sessions[targetIdx] && asistencia[targetIdx] !== 'A') {
+        while (sessions.length <= targetIdx) sessions.push(null);
+        sessions[targetIdx] = lvl;
         filledCount++;
       }
     });
+
     return filledCount;
   }
 

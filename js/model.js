@@ -26,7 +26,7 @@ class Model {
       autoevaluacion: [null, null, null],
       asistencia: [null, null, null], // null = presente, 'A' = ausente
       puntos: 0,
-      observaciones: '' // texto libre por nivel (opcional); útil en Alto / En proceso
+      observaciones: [null, null, null] // notas libres por sesión
     };
   }
 
@@ -141,9 +141,13 @@ class Model {
     return grades[studentIdx];
   }
 
-  updateObservaciones(studentIdx, text) {
+  updateObservaciones(studentIdx, sessionIdx, text) {
     const grades = this.getGrades();
-    grades[studentIdx].observaciones = String(text || '').trim();
+    if (!grades[studentIdx].observaciones || typeof grades[studentIdx].observaciones === 'string') {
+      grades[studentIdx].observaciones = [null, null, null];
+    }
+    const val = String(text || '').trim();
+    grades[studentIdx].observaciones[sessionIdx] = val ? val : null;
     return grades[studentIdx];
   }
 
@@ -155,10 +159,11 @@ class Model {
     
     students.forEach((name, idx) => {
       const sessions = grades[idx][dim];
-      // Buscar primer slot vacío dentro de numSesiones, expandiendo el array si es necesario
+      const asistencia = grades[idx].asistencia || [];
+      // Buscar primer slot vacío dentro de numSesiones, expandiendo el array si es necesario, excluyendo ausencias
       let emptyIdx = -1;
       for (let i = 0; i < numSesiones; i++) {
-        if (!sessions[i]) { emptyIdx = i; break; }
+        if (!sessions[i] && asistencia[i] !== 'A') { emptyIdx = i; break; }
       }
       if (emptyIdx !== -1) {
         while (sessions.length <= emptyIdx) sessions.push(null);
@@ -173,9 +178,10 @@ class Model {
 
   generateCSV() {
     // Encabezado descriptivo — las columnas de sesión varían por clase según NumSesiones
-    const lines = ['ClaseId,NombreClase,NumSesiones,Periodo,Estudiante,[Conceptos x N],[Practica x N],[Comportamiento x N],[Autoevaluacion x N],[Asistencia x N],Puntos,Observaciones'];
+    const lines = ['ClaseId,NombreClase,NumSesiones,Periodo,Estudiante,[Conceptos x N],[Practica x N],[Comportamiento x N],[Autoevaluacion x N],[Asistencia x N],Puntos,[Observaciones x N]'];
     
     const pad = (arr, n) => Array.from({ length: n }, (_, i) => arr[i] || '');
+    const padQuoted = (arr, n) => Array.from({ length: n }, (_, i) => arr[i] ? `"${String(arr[i]).replace(/"/g, '""')}"` : '');
 
     Object.values(this.appData.classes).forEach(cls => {
       const n = cls.numSesiones || 3;
@@ -190,7 +196,9 @@ class Model {
           
           const cleanName      = studentName.replace(/"/g, '""');
           const cleanClassName = cls.name.replace(/"/g, '""');
-          const obsRaw = (g.observaciones || '').replace(/"/g, '""');
+          let obsArr = g.observaciones;
+          if (!Array.isArray(obsArr)) obsArr = [obsArr];
+
           const row = [
             cls.id,
             `"${cleanClassName}"`,
@@ -203,7 +211,7 @@ class Model {
             ...pad(g.autoevaluacion   || [], n),
             ...pad(g.asistencia       || [], n),
             g.puntos || 0,
-            `"${obsRaw}"`
+            ...padQuoted(obsArr, n)
           ];
           lines.push(row.join(','));
         });
@@ -264,7 +272,16 @@ class Model {
       if (cols.length <= ptsIdx) return;
 
       const ptsRaw = cols[ptsIdx];
-      const observaciones = cols.length > ptsIdx + 1 ? (cols[ptsIdx + 1] || '').replace(/""/g, '"') : '';
+      let observaciones = Array.from({ length: numSesiones }, () => null);
+
+      if (cols.length > ptsIdx + 1 + numSesiones) {
+        // Formato nuevo [Observaciones x N]
+        observaciones = slice(ptsIdx + 1).map(v => v ? v.replace(/""/g, '"') : null);
+      } else if (cols.length > ptsIdx + 1) {
+        // Formato antiguo (1 columna de observaciones)
+        const oldObs = (cols[ptsIdx + 1] || '').replace(/""/g, '"');
+        observaciones[0] = oldObs || null;
+      }
 
       if (!newAppData.classes[classId]) {
         newAppData.classes[classId] = { id: classId, name: className, students: [], numSesiones };
@@ -295,7 +312,7 @@ class Model {
           autoevaluacion:  aeArr.map(v => v || null),
           asistencia:      attArr.map(v => v || null),
           puntos: parseInt(ptsRaw, 10) || 0,
-          observaciones: observaciones || ''
+          observaciones
         };
       }
     });
@@ -544,15 +561,44 @@ class Model {
     this.currentClass = null;
   }
 
-  renameClass(id, newName, numSesiones) {
-    if (this.appData.classes[id]) {
-      this.appData.classes[id].name = newName;
+  renameClass(id, newName, numSesiones, newStudentsList = null) {
+    const cls = this.appData.classes[id];
+    if (cls) {
+      cls.name = newName;
       if (numSesiones && numSesiones >= 1) {
-        this.appData.classes[id].numSesiones = numSesiones;
+        cls.numSesiones = numSesiones;
+      }
+      if (newStudentsList && Array.isArray(newStudentsList)) {
+        this.updateClassStudentsMap(id, newStudentsList);
       }
       return true;
     }
     return false;
+  }
+
+  updateClassStudentsMap(classId, newStudents) {
+    const cls = this.appData.classes[classId];
+    if (!cls) return;
+
+    // Preservar estado en base al nombre original
+    const oldStudents = cls.students || [];
+    const oldGradesMap = {};
+    CONFIG.PERIODS.forEach(p => {
+      oldGradesMap[p.id] = {};
+      const cg = this.appData.grades[p.id][classId];
+      if (cg) {
+        oldStudents.forEach((stName, idx) => {
+          oldGradesMap[p.id][stName] = cg[idx];
+        });
+      }
+    });
+
+    cls.students = newStudents;
+    CONFIG.PERIODS.forEach(p => {
+      this.appData.grades[p.id][classId] = newStudents.map(stName => {
+        return oldGradesMap[p.id][stName] || this.emptyGrade();
+      });
+    });
   }
 
   getStats() {

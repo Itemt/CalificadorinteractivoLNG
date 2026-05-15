@@ -20,8 +20,12 @@ class View {
       const id = this.renameClassIdInput.value;
       const newName = this.renameClassNameInput.value.trim();
       const numSesiones = parseInt(this.renameClassSessionsInput?.value) || 3;
+      
+      const stInputs = document.querySelectorAll('.rename-student-input');
+      const newStudentsList = Array.from(stInputs).map(inp => inp.value.trim()).filter(Boolean);
+
       if (newName && this.onRenameClass) {
-        this.onRenameClass(id, newName, numSesiones);
+        this.onRenameClass(id, newName, numSesiones, newStudentsList.length > 0 ? newStudentsList : null);
         this.hideRenameModal();
       }
     };
@@ -62,13 +66,49 @@ class View {
     this.setupTheme();
   }
 
-  showRenameModal(id, currentName, currentNumSesiones = 3) {
+  showRenameModal(id, currentName, currentNumSesiones = 3, students = []) {
     if (!this.renameClassModal) return;
     this.renameClassIdInput.value = id;
     this.renameClassNameInput.value = currentName;
     if (this.renameClassSessionsInput) this.renameClassSessionsInput.value = currentNumSesiones;
+    
+    const container = document.getElementById('renameStudentsContainer');
+    if (container) {
+      container.innerHTML = '';
+      students.forEach(st => this.addRenameStudentInput(container, st));
+      const btnAdd = document.getElementById('btnAddStudentRename');
+      if (btnAdd) {
+        btnAdd.onclick = () => this.addRenameStudentInput(container, '');
+      }
+    }
+
     this.renameClassModal.style.display = 'flex';
     setTimeout(() => this.renameClassNameInput.focus(), 100);
+  }
+
+  addRenameStudentInput(container, val) {
+    const wrap = document.createElement('div');
+    wrap.style.display = 'flex';
+    wrap.style.gap = '5px';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = val;
+    input.className = 'rename-student-input';
+    input.style.flex = '1';
+    input.style.padding = '4px';
+    input.style.fontSize = '0.9rem';
+    input.placeholder = 'Nombre del estudiante';
+    const btnDel = document.createElement('button');
+    btnDel.type = 'button';
+    btnDel.textContent = '✗';
+    btnDel.style.cursor = 'pointer';
+    btnDel.style.background = 'none';
+    btnDel.style.border = 'none';
+    btnDel.style.color = 'var(--red, #ef4444)';
+    btnDel.onclick = () => wrap.remove();
+    wrap.appendChild(input);
+    wrap.appendChild(btnDel);
+    container.appendChild(wrap);
   }
 
   _finishObsModal(result) {
@@ -81,14 +121,14 @@ class View {
     }
   }
 
-  showObsModal(studentName, currentText) {
+  showObsModal(studentName, sessionIndex, currentText) {
     return new Promise((resolve) => {
       if (!this.obsModal || !this.obsModalText) {
         resolve(null);
         return;
       }
       this._obsResolve = resolve;
-      if (this.obsModalStudent) this.obsModalStudent.textContent = studentName;
+      if (this.obsModalStudent) this.obsModalStudent.innerHTML = `<strong>${studentName}</strong> (Clase ${sessionIndex})`;
       this.obsModalText.value = currentText || '';
       this.obsModal.style.display = 'flex';
       setTimeout(() => {
@@ -174,10 +214,10 @@ class View {
       const editBtn = document.createElement('span');
       editBtn.className = 'edit-class-btn';
       editBtn.innerHTML = ' ✏️';
-      editBtn.title = 'Renombrar materia';
+      editBtn.title = 'Editar materia';
       editBtn.onclick = (e) => {
         e.stopPropagation();
-        this.showRenameModal(cls.id, cls.name, cls.numSesiones || 3);
+        this.showRenameModal(cls.id, cls.name, cls.numSesiones || 3, cls.students || []);
       };
       btn.appendChild(editBtn);
 
@@ -217,7 +257,7 @@ class View {
         const td = document.createElement('td');
         td.className = 'col-dim-cell';
         td.id = `dim-${idx}-${dim}`;
-        td.innerHTML = this.buildDimCellHtml(idx, dim, grades[idx][dim], model, numSesiones);
+        td.innerHTML = this.buildDimCellHtml(idx, dim, grades[idx], model, numSesiones);
         tr.appendChild(td);
       });
 
@@ -251,7 +291,7 @@ class View {
 
     CONFIG.DIMS.forEach(dim => {
       const td = document.getElementById(`dim-${idx}-${dim}`);
-      td.innerHTML = this.buildDimCellHtml(idx, dim, grade[dim], model, numSesiones);
+      td.innerHTML = this.buildDimCellHtml(idx, dim, grade, model, numSesiones);
     });
     
     document.getElementById(`total-${idx}`).innerHTML = this.buildTotalHtml(grade, model, idx);
@@ -263,18 +303,10 @@ class View {
   }
 
   buildStudentCellHtml(idx, name, grade, numSesiones = 3, model = null) {
-    const att = grade.asistencia || [null, null, null];
+    const att = grade.asistencia || [];
     const pts = grade.puntos || 0;
-    const obs = (grade.observaciones || '').trim();
-    const overall = model ? model.overallLevel(grade) : null;
-    const obsHint = overall === 'A' || overall === 'P'
-      ? 'Opcional: por qué quedó en Alto o En proceso en este nivel'
-      : 'Notas sobre este estudiante en este nivel (opcional)';
-    const obsClasses = ['btn-obs'];
-    if (obs) obsClasses.push('btn-obs-filled');
-    else if (overall === 'A' || overall === 'P') obsClasses.push('btn-obs-hint');
-
-    // Padding dinámico para asistencia igual que en dimensiones
+    
+    // Asistencia
     const attBtns = Array.from({ length: numSesiones }, (_, i) => att[i] ?? null).map((a, si) => {
       const absent = a === 'A';
       const cls    = absent ? 'att-btn att-absent' : 'att-btn att-present';
@@ -285,6 +317,18 @@ class View {
       return `<button class="${cls}" data-idx="${idx}" data-si="${si}" title="${tip}">
         <span class="att-icon">${icon}</span><span class="att-num">C${si + 1}</span>
       </button>`;
+    }).join('');
+
+    // Observaciones (por sesión)
+    const obsArr = grade.observaciones || Array(numSesiones).fill(null);
+    const obsBtns = Array.from({ length: numSesiones }, (_, i) => obsArr[i] ?? null).map((o, si) => {
+      const absent = att[si] === 'A';
+      const disabledAttr = absent ? 'disabled' : '';
+      const opacityStyle = absent ? 'style="opacity: 0.5;"' : '';
+      const isFilled = o && String(o).trim() !== '';
+      const cls = isFilled ? 'btn-obs btn-obs-filled' : 'btn-obs';
+      const tip = absent ? `Clase ${si + 1}: Ausente (sin observaciones)` : (isFilled ? `Clase ${si + 1}: Editar observación` : `Clase ${si + 1}: Agregar observación`);
+      return `<button type="button" class="${cls}" data-idx="${idx}" data-si="${si}" title="${tip}" ${disabledAttr} ${opacityStyle}>Obs C${si + 1}</button>`;
     }).join('');
 
     const ptsClass = pts > 0 ? 'pts-pos' : pts < 0 ? 'pts-neg' : 'pts-zero';
@@ -307,7 +351,7 @@ class View {
         </div>
         <div class="extra-row">
           <span class="extra-lbl">📝 Obs.</span>
-          <button type="button" class="${obsClasses.join(' ')}" data-idx="${idx}" title="${obsHint.replace(/"/g, '&quot;')}">Notas</button>
+          <div class="att-dots">${obsBtns}</div>
         </div>
       </div>`;
   }
@@ -340,26 +384,33 @@ class View {
     container.querySelectorAll('.btn-obs').forEach(btn => {
       btn.onclick = (e) => {
         e.stopPropagation();
-        if (onOpenObservaciones) onOpenObservaciones(parseInt(e.currentTarget.dataset.idx));
+        if (onOpenObservaciones) {
+          onOpenObservaciones(parseInt(e.currentTarget.dataset.idx), parseInt(e.currentTarget.dataset.si));
+        }
       };
     });
   }
 
-  buildDimCellHtml(idx, dim, sessions, model, numSesiones = 3) {
+  buildDimCellHtml(idx, dim, grade, model, numSesiones = 3) {
+    const sessions = grade[dim] || [];
+    const att = grade.asistencia || [];
     // Padding dinámico: el array de datos puede tener menos slots que numSesiones
     const activeSessions = Array.from({ length: numSesiones }, (_, i) => sessions[i] ?? null);
     const eff  = model.effectiveForDim(activeSessions);
     const code = activeSessions.map(g => g || '·').join('');
 
     const rows = activeSessions.map((g, si) => {
+      const absent = att[si] === 'A';
+      const disabledAttr = absent ? 'disabled' : '';
+      const sessionRowOp = absent ? 'opacity: 0.5;' : '';
       const buttons = CONFIG.LEVELS.map(lvl => {
         const isSelected = g === lvl;
         const selCls = isSelected ? `sel-${lvl.toLowerCase()}` : '';
-        return `<button class="grade-btn ${selCls}" data-idx="${idx}" data-dim="${dim}" data-si="${si}" data-lvl="${lvl}" title="${CONFIG.LEVEL_LABEL[lvl]}">${lvl}</button>`;
+        return `<button class="grade-btn ${selCls}" data-idx="${idx}" data-dim="${dim}" data-si="${si}" data-lvl="${lvl}" title="${CONFIG.LEVEL_LABEL[lvl]}" ${disabledAttr}>${lvl}</button>`;
       }).join('');
 
       const dotColor = g ? `dot-${g.toLowerCase()}` : '';
-      return `<div class="session-row">
+      return `<div class="session-row" style="${sessionRowOp}">
         <span class="session-dot ${dotColor}" title="Clase ${si + 1}: ${g ? CONFIG.LEVEL_LABEL[g] : 'Sin calificar'}">${si + 1}</span>
         <div class="session-btns">${buttons}</div>
       </div>`;

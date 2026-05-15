@@ -99,7 +99,12 @@ Carlos Gómez
           <span style="font-size:0.82rem;color:var(--fg2);">Clases evaluadas por nivel</span>
         </div>
       </div>
-      <div class="modal-actions">
+      <div class="form-group" style="margin-top: 15px;">
+        <label>Estudiantes</label>
+        <div id="renameStudentsContainer" style="max-height:160px; overflow-y:auto; border: 1px solid var(--border); padding: 5px; border-radius:6px; background:var(--bg); display:flex; flex-direction:column; gap:5px;"></div>
+        <button type="button" id="btnAddStudentRename" style="margin-top:8px; padding:4px 8px; font-size:0.8rem; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--fg); cursor:pointer;">+ Añadir estudiante</button>
+      </div>
+      <div class="modal-actions" style="margin-top: 20px;">
         <button id="btnCancelRename" class="btn-cancel">Cancelar</button>
         <button id="btnConfirmRename" class="btn-save">Guardar</button>
       </div>

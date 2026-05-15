@@ -126,8 +126,8 @@ class Controller {
       this.view.showSaveNameModal(defaultName, note);
 
     // Rename class callback (siempre activo)
-    this.view.onRenameClass = (id, newName, numSesiones) => {
-      if (this.model.renameClass(id, newName, numSesiones)) {
+    this.view.onRenameClass = (id, newName, numSesiones, newStudentsList) => {
+      if (this.model.renameClass(id, newName, numSesiones, newStudentsList)) {
         this.refreshView();
         this.view.showToast('✅ Materia actualizada');
         this.model.autoSave();
@@ -321,16 +321,18 @@ class Controller {
     }
   }
 
-  async handleObservaciones(idx) {
+  async handleObservaciones(idx, si) {
     const students = this.model.getStudents();
     const name = students[idx];
     if (name == null) return;
-    const cur = (this.model.getGrades()[idx].observaciones || '');
-    const result = await this.view.showObsModal(name, cur);
+    const grades = this.model.getGrades();
+    const obsArr = grades[idx].observaciones || [];
+    const cur = String(obsArr[si] || '');
+    const result = await this.view.showObsModal(name, si + 1, cur);
     if (result === null) return;
     const trimmed = String(result).trim();
-    const prev = String(cur).trim();
-    const newGrade = this.model.updateObservaciones(idx, result);
+    const prev = cur.trim();
+    const newGrade = this.model.updateObservaciones(idx, si, result);
     this.view.updateRow(idx, newGrade, this.model,
       this.handleSessionSelect.bind(this),
       this.handleAttendance.bind(this),
@@ -341,7 +343,7 @@ class Controller {
       this.model.saveFile(false).catch(() => {});
     }
     if (trimmed !== prev) {
-      this.view.showToast('📝 Observaciones guardadas');
+      this.view.showToast('📝 Observación guardada');
     }
   }
 

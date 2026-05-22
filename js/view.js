@@ -52,15 +52,41 @@ class View {
       };
     }
 
-    // Botones − / + para inputs de sesiones
-    document.querySelectorAll('.sessions-step').forEach(btn => {
-      btn.onclick = () => {
-        const input = document.getElementById(btn.dataset.target);
-        if (!input) return;
-        const delta = parseInt(btn.dataset.delta);
-        const val = Math.min(10, Math.max(1, (parseInt(input.value) || 3) + delta));
-        input.value = val;
+    // Custom Date Picker Modal
+    this.datePickerModal = document.getElementById('datePickerModal');
+    this.calendarMonthYear = document.getElementById('calendarMonthYear');
+    this.calendarDaysGrid = document.getElementById('calendarDaysGrid');
+    this.btnPrevMonth = document.getElementById('btnPrevMonth');
+    this.btnNextMonth = document.getElementById('btnNextMonth');
+    this.btnClearDate = document.getElementById('btnClearDate');
+    this.btnTodayDate = document.getElementById('btnTodayDate');
+    this.btnCancelDate = document.getElementById('btnCancelDate');
+    this.btnCloseCalendarModal = document.getElementById('btnCloseCalendarModal');
+    this._datePickerResolve = null;
+
+    this.pickerYear = null;
+    this.pickerMonth = null;
+    this.pickerSelectedDate = null;
+
+    if (this.btnPrevMonth) this.btnPrevMonth.onclick = () => this.changePickerMonth(-1);
+    if (this.btnNextMonth) this.btnNextMonth.onclick = () => this.changePickerMonth(1);
+    if (this.btnClearDate) this.btnClearDate.onclick = () => this.finishDatePicker("");
+    if (this.btnTodayDate) {
+      this.btnTodayDate.onclick = () => this.finishDatePicker(this.getTodayStr());
+    }
+    if (this.btnCancelDate) this.btnCancelDate.onclick = () => this.finishDatePicker(null);
+    if (this.btnCloseCalendarModal) this.btnCloseCalendarModal.onclick = () => this.finishDatePicker(null);
+    if (this.datePickerModal) {
+      this.datePickerModal.onclick = (e) => {
+        if (e.target === this.datePickerModal) {
+          this.finishDatePicker(null);
+        }
       };
+    }
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.datePickerModal && this.datePickerModal.style.display === 'flex') {
+        this.finishDatePicker(null);
+      }
     });
 
     this.setupTheme();
@@ -169,39 +195,152 @@ class View {
       const dateVal = dates[si] || '';
       
       const group = document.createElement('div');
-      group.className = 'date-input-group';
+      group.className = 'date-input-group clickable';
+      group.setAttribute('tabindex', '0');
       
       const label = document.createElement('label');
       label.textContent = `C${si + 1}:`;
+      label.style.cursor = 'pointer';
       
-      const input = document.createElement('input');
-      input.type = 'date';
-      input.className = 'class-date-input';
-      input.dataset.si = si;
-      input.value = dateVal;
+      const valueSpan = document.createElement('span');
+      if (dateVal) {
+        valueSpan.textContent = this.formatDate(dateVal);
+        valueSpan.className = 'class-date-value';
+      } else {
+        valueSpan.textContent = 'dd/mm/yyyy';
+        valueSpan.className = 'class-date-value empty';
+      }
       
-      input.onchange = (e) => {
-        const idx = parseInt(e.target.dataset.si);
-        const val = e.target.value;
-        onDateChange(idx, val);
-      };
+      const iconSpan = document.createElement('span');
+      iconSpan.textContent = ' 📅';
+      iconSpan.className = 'calendar-icon-indicator';
 
-      group.style.cursor = 'pointer';
-      group.onclick = (e) => {
-        if (e.target !== input) {
-          try {
-            input.showPicker();
-          } catch (err) {
-            input.focus();
-          }
+      group.appendChild(label);
+      group.appendChild(valueSpan);
+      group.appendChild(iconSpan);
+      
+      const triggerSelect = async () => {
+        const chosenDate = await this.showDatePickerModal(dateVal);
+        if (chosenDate !== null) {
+          onDateChange(si, chosenDate);
         }
       };
 
-      group.appendChild(label);
-      group.appendChild(input);
+      group.onclick = triggerSelect;
+      group.onkeydown = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          triggerSelect();
+        }
+      };
+
       container.appendChild(group);
     }
   }
+
+  getTodayStr() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const r = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${r}`;
+  }
+
+  showDatePickerModal(currentDateStr) {
+    return new Promise((resolve) => {
+      this._datePickerResolve = resolve;
+      
+      let activeDateStr = currentDateStr || this.getTodayStr();
+      this.pickerSelectedDate = currentDateStr || '';
+      
+      let parts = activeDateStr.split('-');
+      if (parts.length === 3) {
+        this.pickerYear = parseInt(parts[0]);
+        this.pickerMonth = parseInt(parts[1]) - 1;
+      } else {
+        const d = new Date();
+        this.pickerYear = d.getFullYear();
+        this.pickerMonth = d.getMonth();
+      }
+      
+      this.renderCalendarGrid();
+      
+      if (this.datePickerModal) {
+        this.datePickerModal.style.display = 'flex';
+      }
+    });
+  }
+
+  renderCalendarGrid() {
+    if (!this.calendarMonthYear || !this.calendarDaysGrid) return;
+    
+    const monthNames = [
+      "enero", "febrero", "marzo", "abril", "mayo", "junio", 
+      "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+    ];
+    this.calendarMonthYear.textContent = `${monthNames[this.pickerMonth]} ${this.pickerYear}`;
+    
+    this.calendarDaysGrid.innerHTML = '';
+    
+    const firstDay = new Date(this.pickerYear, this.pickerMonth, 1).getDay();
+    const totalDays = new Date(this.pickerYear, this.pickerMonth + 1, 0).getDate();
+    
+    for (let i = 0; i < firstDay; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day empty';
+      this.calendarDaysGrid.appendChild(cell);
+    }
+    
+    const todayStr = this.getTodayStr();
+    
+    for (let day = 1; day <= totalDays; day++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'calendar-day';
+      btn.textContent = day;
+      
+      const mStr = String(this.pickerMonth + 1).padStart(2, '0');
+      const dStr = String(day).padStart(2, '0');
+      const cellDateStr = `${this.pickerYear}-${mStr}-${dStr}`;
+      
+      if (cellDateStr === todayStr) {
+        btn.classList.add('today');
+      }
+      
+      if (cellDateStr === this.pickerSelectedDate) {
+        btn.classList.add('selected');
+      }
+      
+      btn.onclick = () => {
+        this.finishDatePicker(cellDateStr);
+      };
+      
+      this.calendarDaysGrid.appendChild(btn);
+    }
+  }
+
+  changePickerMonth(delta) {
+    this.pickerMonth += delta;
+    if (this.pickerMonth < 0) {
+      this.pickerMonth = 11;
+      this.pickerYear -= 1;
+    } else if (this.pickerMonth > 11) {
+      this.pickerMonth = 0;
+      this.pickerYear += 1;
+    }
+    this.renderCalendarGrid();
+  }
+
+  finishDatePicker(val) {
+    if (this._datePickerResolve) {
+      this._datePickerResolve(val);
+      this._datePickerResolve = null;
+    }
+    if (this.datePickerModal) {
+      this.datePickerModal.style.display = 'none';
+    }
+  }
+
 
   hideRenameModal() {
     if (this.renameClassModal) this.renameClassModal.style.display = 'none';

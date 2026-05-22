@@ -1189,3 +1189,204 @@ td.col-dim-cell {
 [data-theme="light"] ::-webkit-calendar-picker-indicator {
   filter: none;
 }
+
+/* ===================================================
+   CALENDARIO PERSONALIZADO (Premium UI)
+   =================================================== */
+.calendar-modal {
+  position: relative !important;
+  max-width: 360px !important;
+  width: 90% !important;
+  padding: 24px !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4) !important;
+  border-radius: var(--radius) !important;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: modalScaleIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color var(--transition), background var(--transition), transform var(--transition);
+  z-index: 10;
+}
+
+.close-modal-btn:hover {
+  color: var(--white);
+  background: var(--border);
+  transform: scale(1.1);
+}
+
+.close-modal-btn:active {
+  transform: scale(0.95);
+}
+
+@keyframes modalScaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.calendar-month-year {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--white);
+  text-transform: capitalize;
+}
+
+.cal-nav-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--white);
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition), border-color var(--transition), background var(--transition);
+}
+
+.cal-nav-btn:hover {
+  border-color: var(--accent);
+  background: var(--surface);
+  transform: scale(1.1);
+}
+
+.cal-nav-btn:active {
+  transform: scale(0.95);
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.calendar-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  border: none;
+  background: transparent;
+  color: var(--white);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), color var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+
+.calendar-day:hover:not(.empty) {
+  background: var(--border);
+  transform: scale(1.1);
+}
+
+.calendar-day.today {
+  border: 2px solid var(--accent);
+}
+
+.calendar-day.selected {
+  background: linear-gradient(135deg, #7c4dff, #b47aff);
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(124, 77, 255, 0.4);
+  border: none;
+}
+
+.calendar-day.empty {
+  cursor: default;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* Premium styling for class date interactive pill */
+.date-input-group.clickable {
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+
+.date-input-group.clickable:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124, 77, 255, 0.15);
+}
+
+.date-input-group.clickable:active {
+  transform: translateY(0);
+}
+
+.class-date-value {
+  color: var(--white);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.class-date-value.empty {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.calendar-icon-indicator {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  transition: opacity var(--transition);
+}
+
+.date-input-group.clickable:hover .calendar-icon-indicator {
+  opacity: 1;
+}
+

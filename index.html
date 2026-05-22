@@ -125,6 +125,28 @@ Carlos Gómez
     </div>
   </div>
 
+  <!-- ===== SELECCIÓN DE FECHA PERSONALIZADA (CALENDARIO) ===== -->
+  <div id="datePickerModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card calendar-modal">
+      <button type="button" class="close-modal-btn" id="btnCloseCalendarModal" title="Cerrar">&times;</button>
+      <h3 id="datePickerTitle">📅 Seleccionar Fecha</h3>
+      <div class="calendar-header">
+        <button type="button" id="btnPrevMonth" class="cal-nav-btn">◀</button>
+        <span id="calendarMonthYear" class="calendar-month-year"></span>
+        <button type="button" id="btnNextMonth" class="cal-nav-btn">▶</button>
+      </div>
+      <div class="calendar-weekdays">
+        <span>Do</span><span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span>
+      </div>
+      <div id="calendarDaysGrid" class="calendar-days-grid"></div>
+      <div class="modal-actions" style="margin-top:0;">
+        <button type="button" id="btnClearDate" class="btn-cancel" style="background:#ef4444; border-color:#ef4444; color:#fff; flex: 1;">🧹 Borrar</button>
+        <button type="button" id="btnTodayDate" class="btn-save" style="background:var(--accent); border-color:var(--accent); color:#fff; flex: 1;">📅 Hoy</button>
+        <button type="button" id="btnCancelDate" class="btn-cancel" style="flex: 1;">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== HERO HEADER ===== -->
   <header class="hero">
     <div class="hero-glow"></div>

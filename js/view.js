@@ -186,6 +186,17 @@ class View {
         onDateChange(idx, val);
       };
 
+      group.style.cursor = 'pointer';
+      group.onclick = (e) => {
+        if (e.target !== input) {
+          try {
+            input.showPicker();
+          } catch (err) {
+            input.focus();
+          }
+        }
+      };
+
       group.appendChild(label);
       group.appendChild(input);
       container.appendChild(group);

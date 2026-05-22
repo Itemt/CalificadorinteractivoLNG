@@ -1105,6 +1105,8 @@ td.col-dim-cell {
 .class-dates-bar {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
   gap: 12px;
   background: var(--card);
   border: 1px solid var(--border);
@@ -1131,6 +1133,7 @@ td.col-dim-cell {
 .class-dates-inputs {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 12px;
 }
 
@@ -1142,7 +1145,12 @@ td.col-dim-cell {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 6px 12px;
-  transition: border-color var(--transition);
+  transition: border-color var(--transition), transform var(--transition);
+}
+
+.date-input-group:hover {
+  border-color: var(--accent);
+  transform: scale(1.02);
 }
 
 .date-input-group:focus-within {
@@ -1153,6 +1161,7 @@ td.col-dim-cell {
   font-size: 0.75rem;
   font-weight: 800;
   color: var(--muted);
+  user-select: none;
 }
 
 .class-date-input {
@@ -1164,15 +1173,18 @@ td.col-dim-cell {
   font-weight: 700;
   outline: none;
   cursor: pointer;
+  color-scheme: dark;
 }
 
 [data-theme="light"] .class-date-input {
   color: var(--white);
+  color-scheme: light;
 }
 
 /* Selector indicator readable in dark theme */
 ::-webkit-calendar-picker-indicator {
   filter: invert(0.8);
+  cursor: pointer;
 }
 [data-theme="light"] ::-webkit-calendar-picker-indicator {
   filter: none;

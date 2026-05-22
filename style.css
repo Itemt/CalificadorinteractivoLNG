@@ -1098,3 +1098,82 @@ td.col-dim-cell {
 .tour-btn.prev:hover { background: var(--border); color: var(--white); }
 .tour-btn.next { background: var(--accent); color: #fff; }
 .tour-btn.next:hover { background: #b47aff; box-shadow: 0 4px 12px #7c4dff55; }
+
+/* ===================================================
+   SECCIÓN DE FECHAS DE CLASES (Premium UI)
+   =================================================== */
+.class-dates-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.class-dates-bar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+}
+
+.class-dates-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--p-color);
+}
+
+.class-dates-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.date-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  transition: border-color var(--transition);
+}
+
+.date-input-group:focus-within {
+  border-color: var(--accent);
+}
+
+.date-input-group label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.class-date-input {
+  background: transparent;
+  border: none;
+  color: var(--white);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+}
+
+[data-theme="light"] .class-date-input {
+  color: var(--white);
+}
+
+/* Selector indicator readable in dark theme */
+::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+}
+[data-theme="light"] ::-webkit-calendar-picker-indicator {
+  filter: none;
+}

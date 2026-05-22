@@ -182,7 +182,16 @@ class Controller {
       this.handlePeriodSelect.bind(this)
     );
 
-    const numSesiones = this.model.getCurrentClassData()?.numSesiones || 3;
+    const clsData = this.model.getCurrentClassData();
+    const numSesiones = clsData?.numSesiones || 3;
+
+    this.view.renderClassDates(
+      numSesiones,
+      this.model.currentPeriod,
+      clsData,
+      this.handleClassDateChange.bind(this)
+    );
+
     this.view.renderTable(
       this.model.getStudents(),
       this.model.getGrades(),
@@ -259,6 +268,14 @@ class Controller {
     this.refreshView();
   }
 
+  handleClassDateChange(sessionIdx, dateStr) {
+    this.model.updateClassDate(sessionIdx, dateStr);
+    this.refreshView();
+    if (this.model.currentFileHandle) {
+      this.model.saveFile(false).catch(() => {});
+    }
+  }
+
   handleSaveNewClass() {
     const data = this.view.getNewClassData();
     if (!data.name || !data.studentsStr) {
@@ -328,7 +345,10 @@ class Controller {
     const grades = this.model.getGrades();
     const obsArr = grades[idx].observaciones || [];
     const cur = String(obsArr[si] || '');
-    const result = await this.view.showObsModal(name, si + 1, cur);
+    const cls = this.model.getCurrentClassData();
+    const period = this.model.currentPeriod;
+    const dateStr = (cls && cls.fechas && cls.fechas[period] && cls.fechas[period][si]) || '';
+    const result = await this.view.showObsModal(name, si + 1, cur, dateStr);
     if (result === null) return;
     const trimmed = String(result).trim();
     const prev = cur.trim();

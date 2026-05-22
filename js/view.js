@@ -121,14 +121,17 @@ class View {
     }
   }
 
-  showObsModal(studentName, sessionIndex, currentText) {
+  showObsModal(studentName, sessionIndex, currentText, dateStr = '') {
     return new Promise((resolve) => {
       if (!this.obsModal || !this.obsModalText) {
         resolve(null);
         return;
       }
       this._obsResolve = resolve;
-      if (this.obsModalStudent) this.obsModalStudent.innerHTML = `<strong>${studentName}</strong> (Clase ${sessionIndex})`;
+      
+      const formattedDate = this.formatDate(dateStr);
+      const dateSuffix = formattedDate ? ` - Fecha: ${formattedDate}` : '';
+      if (this.obsModalStudent) this.obsModalStudent.innerHTML = `<strong>${studentName}</strong> (Clase ${sessionIndex}${dateSuffix})`;
       this.obsModalText.value = currentText || '';
       this.obsModal.style.display = 'flex';
       setTimeout(() => {
@@ -136,6 +139,57 @@ class View {
         this.obsModalText.selectionStart = this.obsModalText.value.length;
       }, 80);
     });
+  }
+
+  formatDate(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateStr;
+  }
+
+  renderClassDates(numSesiones, currentPeriod, clsData, onDateChange) {
+    const bar = document.getElementById('classDatesBar');
+    const container = document.getElementById('classDatesInputs');
+    if (!bar || !container) return;
+
+    if (!clsData) {
+      bar.style.display = 'none';
+      return;
+    }
+
+    bar.style.display = 'flex';
+    container.innerHTML = '';
+
+    const dates = (clsData.fechas && clsData.fechas[currentPeriod]) || [];
+
+    for (let si = 0; si < numSesiones; si++) {
+      const dateVal = dates[si] || '';
+      
+      const group = document.createElement('div');
+      group.className = 'date-input-group';
+      
+      const label = document.createElement('label');
+      label.textContent = `C${si + 1}:`;
+      
+      const input = document.createElement('input');
+      input.type = 'date';
+      input.className = 'class-date-input';
+      input.dataset.si = si;
+      input.value = dateVal;
+      
+      input.onchange = (e) => {
+        const idx = parseInt(e.target.dataset.si);
+        const val = e.target.value;
+        onDateChange(idx, val);
+      };
+
+      group.appendChild(label);
+      group.appendChild(input);
+      container.appendChild(group);
+    }
   }
 
   hideRenameModal() {
@@ -306,14 +360,25 @@ class View {
     const att = grade.asistencia || [];
     const pts = grade.puntos || 0;
     
+    // Get class dates
+    let clsFechas = [];
+    if (model) {
+      const cls = model.getCurrentClassData();
+      const period = model.currentPeriod;
+      if (cls && cls.fechas && cls.fechas[period]) {
+        clsFechas = cls.fechas[period];
+      }
+    }
+    
     // Asistencia
     const attBtns = Array.from({ length: numSesiones }, (_, i) => att[i] ?? null).map((a, si) => {
       const absent = a === 'A';
       const cls    = absent ? 'att-btn att-absent' : 'att-btn att-present';
       const icon   = absent ? '✗' : '✓';
+      const dateStr = (clsFechas && clsFechas[si]) ? ` (${this.formatDate(clsFechas[si])})` : '';
       const tip    = absent
-        ? `Clase ${si + 1}: Faltó — clic para marcar Presente`
-        : `Clase ${si + 1}: Presente — clic para marcar Ausente`;
+        ? `Clase ${si + 1}${dateStr}: Faltó — clic para marcar Presente`
+        : `Clase ${si + 1}${dateStr}: Presente — clic para marcar Ausente`;
       return `<button class="${cls}" data-idx="${idx}" data-si="${si}" title="${tip}">
         <span class="att-icon">${icon}</span><span class="att-num">C${si + 1}</span>
       </button>`;
@@ -327,7 +392,10 @@ class View {
       const opacityStyle = absent ? 'style="opacity: 0.5;"' : '';
       const isFilled = o && String(o).trim() !== '';
       const cls = isFilled ? 'btn-obs btn-obs-filled' : 'btn-obs';
-      const tip = absent ? `Clase ${si + 1}: Ausente (sin observaciones)` : (isFilled ? `Clase ${si + 1}: Editar observación` : `Clase ${si + 1}: Agregar observación`);
+      const dateStr = (clsFechas && clsFechas[si]) ? ` (${this.formatDate(clsFechas[si])})` : '';
+      const tip = absent 
+        ? `Clase ${si + 1}${dateStr}: Ausente (sin observaciones)` 
+        : (isFilled ? `Clase ${si + 1}${dateStr}: Editar observación` : `Clase ${si + 1}${dateStr}: Agregar observación`);
       return `<button type="button" class="${cls}" data-idx="${idx}" data-si="${si}" title="${tip}" ${disabledAttr} ${opacityStyle}>Obs C${si + 1}</button>`;
     }).join('');
 
@@ -399,6 +467,16 @@ class View {
     const eff  = model.effectiveForDim(activeSessions);
     const code = activeSessions.map(g => g || '·').join('');
 
+    // Get class dates
+    let clsFechas = [];
+    if (model) {
+      const cls = model.getCurrentClassData();
+      const period = model.currentPeriod;
+      if (cls && cls.fechas && cls.fechas[period]) {
+        clsFechas = cls.fechas[period];
+      }
+    }
+
     const rows = activeSessions.map((g, si) => {
       const absent = att[si] === 'A';
       const disabledAttr = absent ? 'disabled' : '';
@@ -410,8 +488,9 @@ class View {
       }).join('');
 
       const dotColor = g ? `dot-${g.toLowerCase()}` : '';
+      const dateStr = (clsFechas && clsFechas[si]) ? ` (${this.formatDate(clsFechas[si])})` : '';
       return `<div class="session-row" style="${sessionRowOp}">
-        <span class="session-dot ${dotColor}" title="Clase ${si + 1}: ${g ? CONFIG.LEVEL_LABEL[g] : 'Sin calificar'}">${si + 1}</span>
+        <span class="session-dot ${dotColor}" title="Clase ${si + 1}${dateStr}: ${g ? CONFIG.LEVEL_LABEL[g] : 'Sin calificar'}">${si + 1}</span>
         <div class="session-btns">${buttons}</div>
       </div>`;
     }).join('');

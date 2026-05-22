@@ -56,7 +56,18 @@ class Model {
 
   addClass(name, students, numSesiones = 3) {
     const id = 'class_' + Date.now();
-    this.appData.classes[id] = { id, name, students, numSesiones };
+    this.appData.classes[id] = {
+      id,
+      name,
+      students,
+      numSesiones,
+      fechas: {
+        inicial: [],
+        basico: [],
+        alto: [],
+        superior: []
+      }
+    };
     
     CONFIG.PERIODS.forEach(p => {
       this.appData.grades[p.id][id] = students.map(() => this.emptyGrade());
@@ -151,6 +162,32 @@ class Model {
     return grades[studentIdx];
   }
 
+  updateClassDate(sessionIdx, dateStr) {
+    if (!this.currentClass) return;
+    const cls = this.getCurrentClassData();
+    if (!cls) return;
+    
+    if (!cls.fechas) {
+      cls.fechas = {
+        inicial: [],
+        basico: [],
+        alto: [],
+        superior: []
+      };
+    }
+    
+    if (!cls.fechas[this.currentPeriod]) {
+      cls.fechas[this.currentPeriod] = [];
+    }
+    
+    while (cls.fechas[this.currentPeriod].length <= sessionIdx) {
+      cls.fechas[this.currentPeriod].push('');
+    }
+    
+    cls.fechas[this.currentPeriod][sessionIdx] = dateStr;
+    return cls.fechas[this.currentPeriod];
+  }
+
   fillAllDimension(dim, lvl) {
     let filledCount = 0;
     const students = this.getStudents();
@@ -197,7 +234,7 @@ class Model {
 
   generateCSV() {
     // Encabezado descriptivo — las columnas de sesión varían por clase según NumSesiones
-    const lines = ['ClaseId,NombreClase,NumSesiones,Periodo,Estudiante,[Conceptos x N],[Practica x N],[Comportamiento x N],[Autoevaluacion x N],[Asistencia x N],Puntos,[Observaciones x N]'];
+    const lines = ['ClaseId,NombreClase,NumSesiones,Periodo,Estudiante,[Conceptos x N],[Practica x N],[Comportamiento x N],[Autoevaluacion x N],[Asistencia x N],[Fechas x N],Puntos,[Observaciones x N]'];
     
     const pad = (arr, n) => Array.from({ length: n }, (_, i) => arr[i] || '');
     const padQuoted = (arr, n) => Array.from({ length: n }, (_, i) => arr[i] ? `"${String(arr[i]).replace(/"/g, '""')}"` : '');
@@ -208,6 +245,8 @@ class Model {
         const periodId = period.id;
         const gradesForPeriod = this.appData.grades[periodId][cls.id];
         if (!gradesForPeriod) return;
+
+        const datesArr = (cls.fechas && cls.fechas[periodId]) ? cls.fechas[periodId] : [];
 
         cls.students.forEach((studentName, idx) => {
           const g = gradesForPeriod[idx];
@@ -229,6 +268,7 @@ class Model {
             ...pad(g.comportamiento   || [], n),
             ...pad(g.autoevaluacion   || [], n),
             ...pad(g.asistencia       || [], n),
+            ...pad(datesArr           || [], n),
             g.puntos || 0,
             ...padQuoted(obsArr, n)
           ];
@@ -260,6 +300,7 @@ class Model {
     const lines = csvStr.split('\n').filter(l => l.trim().length > 0);
     if (lines.length <= 1) return this.createEmptyData(); // Only header or empty
     
+    const hasFechas = lines[0].includes('[Fechas x N]');
     const dataLines = lines.slice(1);
     const newAppData = this.createEmptyData();
     const PERIOD_IDS = new Set(['inicial', 'basico', 'alto', 'superior']);
@@ -278,7 +319,7 @@ class Model {
       const period      = cols[2 + offset];
       const studentName = cols[3 + offset];
 
-      // Columnas de sesión: base=4+offset, luego 5 bloques de numSesiones + Puntos
+      // Columnas de sesión: base=4+offset, luego 5 (o 6 si tiene fechas) bloques de numSesiones
       const base = 4 + offset;
       const slice = (start) => Array.from({ length: numSesiones }, (_, i) => cols[start + i] || null);
 
@@ -287,7 +328,16 @@ class Model {
       const bArr  = slice(base + numSesiones * 2);
       const aeArr = slice(base + numSesiones * 3);
       const attArr= slice(base + numSesiones * 4);
-      const ptsIdx = base + numSesiones * 5;
+      
+      let fArr = [];
+      let ptsIdx;
+      if (hasFechas) {
+        fArr = slice(base + numSesiones * 5);
+        ptsIdx = base + numSesiones * 6;
+      } else {
+        ptsIdx = base + numSesiones * 5;
+      }
+
       if (cols.length <= ptsIdx) return;
 
       const ptsRaw = cols[ptsIdx];
@@ -303,16 +353,40 @@ class Model {
       }
 
       if (!newAppData.classes[classId]) {
-        newAppData.classes[classId] = { id: classId, name: className, students: [], numSesiones };
+        newAppData.classes[classId] = {
+          id: classId,
+          name: className,
+          students: [],
+          numSesiones,
+          fechas: {
+            inicial: [],
+            basico: [],
+            alto: [],
+            superior: []
+          }
+        };
         CONFIG.PERIODS.forEach(p => {
           newAppData.grades[p.id][classId] = [];
         });
-      } else if (!newAppData.classes[classId].numSesiones) {
-        // Actualizar numSesiones si vemos un valor más reciente
-        newAppData.classes[classId].numSesiones = numSesiones;
+      } else {
+        if (!newAppData.classes[classId].numSesiones) {
+          newAppData.classes[classId].numSesiones = numSesiones;
+        }
+        if (!newAppData.classes[classId].fechas) {
+          newAppData.classes[classId].fechas = {
+            inicial: [],
+            basico: [],
+            alto: [],
+            superior: []
+          };
+        }
       }
       
       const cls = newAppData.classes[classId];
+      if (hasFechas && period) {
+        cls.fechas[period] = fArr.map(v => v || '');
+      }
+
       let studentIdx = cls.students.indexOf(studentName);
       
       if (studentIdx === -1) {
@@ -637,7 +711,9 @@ class Model {
 
   exportTextData() {
     if (!this.currentClass) return null;
-    const className = this.getCurrentClassData().name.toUpperCase();
+    const clsData = this.getCurrentClassData();
+    if (!clsData) return null;
+    const className = clsData.name.toUpperCase();
     const periodName = CONFIG.PERIODS.find(p => p.id === this.currentPeriod).label.toUpperCase();
     
     const sep = '─'.repeat(85);
@@ -670,10 +746,22 @@ class Model {
       const ptsStr = pts > 0 ? `+${pts}` : `${pts}`;
 
       lines.push(`${name.substring(0, 33).padEnd(34)} ${fmtDim('conceptos')}${fmtDim('practica')}${fmtDim('comportamiento')}${overallStr}${attStr.padEnd(8)}  ${ptsStr}`);
-      const obs = (g.observaciones || '').trim();
-      if (obs) {
-        const oneLine = obs.replace(/\s+/g, ' ').trim();
-        lines.push(`   · Notas: ${oneLine.length > 200 ? oneLine.slice(0, 200) + '…' : oneLine}`);
+      
+      const obsArr = Array.isArray(g.observaciones) ? g.observaciones : [g.observaciones];
+      const obsLines = [];
+      const dates = (clsData && clsData.fechas && clsData.fechas[this.currentPeriod]) || [];
+
+      obsArr.forEach((obsVal, si) => {
+        if (obsVal && String(obsVal).trim()) {
+          const dateStr = dates[si] ? ` (${this.formatDate(dates[si])})` : '';
+          const cleanObs = String(obsVal).replace(/\s+/g, ' ').trim();
+          obsLines.push(`      Clase ${si + 1}${dateStr}: ${cleanObs}`);
+        }
+      });
+
+      if (obsLines.length > 0) {
+        lines.push(`   · Observaciones:`);
+        obsLines.forEach(l => lines.push(l));
       }
     });
 
@@ -685,5 +773,14 @@ class Model {
     }
 
     return lines.join('\n');
+  }
+
+  formatDate(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateStr;
   }
 }

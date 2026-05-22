@@ -1390,3 +1390,31 @@ td.col-dim-cell {
   opacity: 1;
 }
 
+/* Styling for cancelled/no-class sessions */
+.date-input-group.clickable.no-class {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.date-input-group.clickable.no-class:hover {
+  border-color: #ef4444;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.class-date-value.no-class-text {
+  color: #ff8e8e;
+}
+
+[data-theme="light"] .class-date-value.no-class-text {
+  color: #dc2626;
+}
+
+#txtNoClassReason:focus {
+  border-color: var(--accent);
+}
+
+.session-dot.dot-noclass {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #ef4444;
+}

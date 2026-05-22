@@ -139,7 +139,19 @@ Carlos Gómez
         <span>Do</span><span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span>
       </div>
       <div id="calendarDaysGrid" class="calendar-days-grid"></div>
-      <div class="modal-actions" style="margin-top:0;">
+      
+      <!-- ===== CANCELACIÓN DE CLASE (NO HUBO CLASE) ===== -->
+      <div id="noClassSection" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 12px; text-align: left; display: flex; flex-direction: column; gap: 8px;">
+        <label style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 0.85rem; color: var(--muted); cursor: pointer; user-select: none;">
+          <input type="checkbox" id="chkNoClass" style="width: auto; cursor: pointer; transform: scale(1.1);" />
+          <span>❌ Marcar como "No hubo clase"</span>
+        </label>
+        <div id="noClassReasonContainer" style="display: none;">
+          <input type="text" id="txtNoClassReason" placeholder="Motivo (ej. Feriado, Reunión, etc.)" style="width: 100%; padding: 8px 12px; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--white); font-family: inherit; outline: none;" />
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top:15px;">
         <button type="button" id="btnClearDate" class="btn-cancel" style="background:#ef4444; border-color:#ef4444; color:#fff; flex: 1;">🧹 Borrar</button>
         <button type="button" id="btnTodayDate" class="btn-save" style="background:var(--accent); border-color:var(--accent); color:#fff; flex: 1;">📅 Hoy</button>
         <button type="button" id="btnCancelDate" class="btn-cancel" style="flex: 1;">Cancelar</button>

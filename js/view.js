@@ -64,6 +64,11 @@ class View {
     this.btnCloseCalendarModal = document.getElementById('btnCloseCalendarModal');
     this._datePickerResolve = null;
 
+    // Cancellation controls
+    this.chkNoClass = document.getElementById('chkNoClass');
+    this.noClassReasonContainer = document.getElementById('noClassReasonContainer');
+    this.txtNoClassReason = document.getElementById('txtNoClassReason');
+
     this.pickerYear = null;
     this.pickerMonth = null;
     this.pickerSelectedDate = null;
@@ -72,10 +77,38 @@ class View {
     if (this.btnNextMonth) this.btnNextMonth.onclick = () => this.changePickerMonth(1);
     if (this.btnClearDate) this.btnClearDate.onclick = () => this.finishDatePicker("");
     if (this.btnTodayDate) {
-      this.btnTodayDate.onclick = () => this.finishDatePicker(this.getTodayStr());
+      this.btnTodayDate.onclick = () => {
+        if (this.chkNoClass && this.chkNoClass.checked) {
+          const reason = this.txtNoClassReason.value.trim();
+          const finalVal = `NC:${this.pickerSelectedDate || this.getTodayStr()}:${reason}`;
+          this.finishDatePicker(finalVal);
+        } else {
+          this.finishDatePicker(this.getTodayStr());
+        }
+      };
     }
     if (this.btnCancelDate) this.btnCancelDate.onclick = () => this.finishDatePicker(null);
     if (this.btnCloseCalendarModal) this.btnCloseCalendarModal.onclick = () => this.finishDatePicker(null);
+    
+    if (this.chkNoClass) {
+      this.chkNoClass.onchange = () => {
+        const isChecked = this.chkNoClass.checked;
+        this.noClassReasonContainer.style.display = isChecked ? 'block' : 'none';
+        this.updateDatePickerSaveButton();
+        if (isChecked) {
+          setTimeout(() => this.txtNoClassReason.focus(), 50);
+        }
+      };
+    }
+    if (this.txtNoClassReason) {
+      this.txtNoClassReason.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.btnTodayDate.click();
+        }
+      };
+    }
+
     if (this.datePickerModal) {
       this.datePickerModal.onclick = (e) => {
         if (e.target === this.datePickerModal) {
@@ -167,8 +200,25 @@ class View {
     });
   }
 
+  parseClassDate(dateStr) {
+    if (!dateStr) return { isNoClass: false, date: '', reason: '' };
+    if (dateStr.startsWith('NC:')) {
+      const parts = dateStr.split(':');
+      const date = parts[1] || '';
+      const reason = parts.slice(2).join(':') || '';
+      return { isNoClass: true, date, reason };
+    }
+    return { isNoClass: false, date: dateStr, reason: '' };
+  }
+
   formatDate(dateStr) {
     if (!dateStr) return '';
+    const parsed = this.parseClassDate(dateStr);
+    if (parsed.isNoClass) {
+      const datePart = parsed.date ? this.formatDate(parsed.date) : '';
+      const reasonPart = parsed.reason ? ` - ${parsed.reason}` : '';
+      return `❌ Sin clase${datePart ? ' (' + datePart + ')' : ''}${reasonPart}`;
+    }
     const parts = dateStr.split('-');
     if (parts.length === 3) {
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
@@ -193,9 +243,13 @@ class View {
 
     for (let si = 0; si < numSesiones; si++) {
       const dateVal = dates[si] || '';
+      const parsed = this.parseClassDate(dateVal);
       
       const group = document.createElement('div');
       group.className = 'date-input-group clickable';
+      if (parsed.isNoClass) {
+        group.classList.add('no-class');
+      }
       group.setAttribute('tabindex', '0');
       
       const label = document.createElement('label');
@@ -206,13 +260,16 @@ class View {
       if (dateVal) {
         valueSpan.textContent = this.formatDate(dateVal);
         valueSpan.className = 'class-date-value';
+        if (parsed.isNoClass) {
+          valueSpan.classList.add('no-class-text');
+        }
       } else {
         valueSpan.textContent = 'dd/mm/yyyy';
         valueSpan.className = 'class-date-value empty';
       }
       
       const iconSpan = document.createElement('span');
-      iconSpan.textContent = ' 📅';
+      iconSpan.textContent = parsed.isNoClass ? ' ❌' : ' 📅';
       iconSpan.className = 'calendar-icon-indicator';
 
       group.appendChild(label);
@@ -250,9 +307,22 @@ class View {
     return new Promise((resolve) => {
       this._datePickerResolve = resolve;
       
-      let activeDateStr = currentDateStr || this.getTodayStr();
-      this.pickerSelectedDate = currentDateStr || '';
+      const parsed = this.parseClassDate(currentDateStr);
+      if (parsed.isNoClass) {
+        if (this.chkNoClass) this.chkNoClass.checked = true;
+        if (this.noClassReasonContainer) this.noClassReasonContainer.style.display = 'block';
+        if (this.txtNoClassReason) this.txtNoClassReason.value = parsed.reason;
+        this.pickerSelectedDate = parsed.date;
+      } else {
+        if (this.chkNoClass) this.chkNoClass.checked = false;
+        if (this.noClassReasonContainer) this.noClassReasonContainer.style.display = 'none';
+        if (this.txtNoClassReason) this.txtNoClassReason.value = '';
+        this.pickerSelectedDate = currentDateStr || '';
+      }
+
+      this.updateDatePickerSaveButton();
       
+      let activeDateStr = this.pickerSelectedDate || this.getTodayStr();
       let parts = activeDateStr.split('-');
       if (parts.length === 3) {
         this.pickerYear = parseInt(parts[0]);
@@ -312,7 +382,12 @@ class View {
       }
       
       btn.onclick = () => {
-        this.finishDatePicker(cellDateStr);
+        if (this.chkNoClass && this.chkNoClass.checked) {
+          this.pickerSelectedDate = cellDateStr;
+          this.renderCalendarGrid();
+        } else {
+          this.finishDatePicker(cellDateStr);
+        }
       };
       
       this.calendarDaysGrid.appendChild(btn);
@@ -329,6 +404,16 @@ class View {
       this.pickerYear += 1;
     }
     this.renderCalendarGrid();
+  }
+
+  updateDatePickerSaveButton() {
+    if (this.btnTodayDate) {
+      if (this.chkNoClass && this.chkNoClass.checked) {
+        this.btnTodayDate.textContent = '💾 Guardar';
+      } else {
+        this.btnTodayDate.textContent = '📅 Hoy';
+      }
+    }
   }
 
   finishDatePicker(val) {
@@ -522,7 +607,16 @@ class View {
     
     // Asistencia
     const attBtns = Array.from({ length: numSesiones }, (_, i) => att[i] ?? null).map((a, si) => {
+      const parsedDate = this.parseClassDate(clsFechas[si] || '');
       const absent = a === 'A';
+      
+      if (parsedDate.isNoClass) {
+        const tip = `Clase ${si + 1} (Sin clase${parsedDate.reason ? ': ' + parsedDate.reason : ''})`;
+        return `<button class="att-btn" data-idx="${idx}" data-si="${si}" title="${tip}" disabled style="opacity: 0.4; cursor: not-allowed;">
+          <span class="att-icon">❌</span><span class="att-num">C${si + 1}</span>
+        </button>`;
+      }
+      
       const cls    = absent ? 'att-btn att-absent' : 'att-btn att-present';
       const icon   = absent ? '✗' : '✓';
       const dateStr = (clsFechas && clsFechas[si]) ? ` (${this.formatDate(clsFechas[si])})` : '';
@@ -537,7 +631,14 @@ class View {
     // Observaciones (por sesión)
     const obsArr = grade.observaciones || Array(numSesiones).fill(null);
     const obsBtns = Array.from({ length: numSesiones }, (_, i) => obsArr[i] ?? null).map((o, si) => {
+      const parsedDate = this.parseClassDate(clsFechas[si] || '');
       const absent = att[si] === 'A';
+      
+      if (parsedDate.isNoClass) {
+        const tip = `Clase ${si + 1} (Sin clase)`;
+        return `<button type="button" class="btn-obs" data-idx="${idx}" data-si="${si}" title="${tip}" disabled style="opacity: 0.3; cursor: not-allowed;">Obs C${si + 1}</button>`;
+      }
+      
       const disabledAttr = absent ? 'disabled' : '';
       const opacityStyle = absent ? 'style="opacity: 0.5;"' : '';
       const isFilled = o && String(o).trim() !== '';
@@ -628,6 +729,19 @@ class View {
     }
 
     const rows = activeSessions.map((g, si) => {
+      const parsedDate = this.parseClassDate(clsFechas[si] || '');
+      
+      if (parsedDate.isNoClass) {
+        const dotTitle = `Clase ${si + 1} (Sin clase${parsedDate.reason ? ': ' + parsedDate.reason : ''})`;
+        const buttons = CONFIG.LEVELS.map(lvl => {
+          return `<button class="grade-btn" data-idx="${idx}" data-dim="${dim}" data-si="${si}" data-lvl="${lvl}" title="${CONFIG.LEVEL_LABEL[lvl]}" disabled>${lvl}</button>`;
+        }).join('');
+        return `<div class="session-row" style="opacity: 0.3; cursor: not-allowed;">
+          <span class="session-dot dot-noclass" title="${dotTitle}">❌</span>
+          <div class="session-btns">${buttons}</div>
+        </div>`;
+      }
+      
       const absent = att[si] === 'A';
       const disabledAttr = absent ? 'disabled' : '';
       const sessionRowOp = absent ? 'opacity: 0.5;' : '';
@@ -645,8 +759,11 @@ class View {
       </div>`;
     }).join('');
 
-    // El badge de calificación efectiva solo aparece cuando TODAS las sesiones están calificadas
-    const allFilled = activeSessions.every(g => g !== null && g !== '');
+    // El badge de calificación efectiva solo aparece cuando TODAS las sesiones están calificadas (o canceladas)
+    const allFilled = activeSessions.every((g, si) => {
+      const parsedDate = this.parseClassDate(clsFechas[si] || '');
+      return parsedDate.isNoClass || (g !== null && g !== '');
+    });
     const codeHtml = (eff && allFilled)
       ? `<div class="dim-code"><span class="dim-code-letters">${code}</span><span class="dim-eff-badge eff-${eff.toLowerCase()}">${CONFIG.LEVEL_EMOJI[eff]} ${CONFIG.LEVEL_LABEL[eff]}</span></div>`
       : `<div class="dim-code dim-code-empty"><span class="dim-code-letters">${code}</span></div>`;

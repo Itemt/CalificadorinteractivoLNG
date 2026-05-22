@@ -192,12 +192,18 @@ class Model {
     let filledCount = 0;
     const students = this.getStudents();
     const grades = this.getGrades();
-    const numSesiones = this.getCurrentClassData()?.numSesiones || 3;
+    const cls = this.getCurrentClassData();
+    const numSesiones = cls?.numSesiones || 3;
+    const dates = (cls && cls.fechas && cls.fechas[this.currentPeriod]) || [];
     
     // 1. Encontrar la sesión "objetivo" global de la clase
     // Es la primera columna donde al menos un estudiante presente aún no tiene nota
     let targetIdx = -1;
     for (let i = 0; i < numSesiones; i++) {
+      const dateStr = dates[i] || '';
+      if (dateStr.startsWith('NC:')) {
+        continue; // Ignorar clases canceladas
+      }
       let needsGrading = false;
       for (let idx = 0; idx < students.length; idx++) {
         const sessions = grades[idx][dim] || [];
@@ -268,7 +274,7 @@ class Model {
             ...pad(g.comportamiento   || [], n),
             ...pad(g.autoevaluacion   || [], n),
             ...pad(g.asistencia       || [], n),
-            ...pad(datesArr           || [], n),
+            ...padQuoted(datesArr     || [], n),
             g.puntos || 0,
             ...padQuoted(obsArr, n)
           ];
@@ -723,12 +729,17 @@ class Model {
 
     const students = this.getStudents();
     const grades = this.getGrades();
+    const dates = (clsData && clsData.fechas && clsData.fechas[this.currentPeriod]) || [];
 
     students.forEach((name, idx) => {
       const g = grades[idx];
       const fmtDim = d => {
         const s = g[d];
-        const code = s.map(x => x || '·').join('');
+        const code = s.map((x, si) => {
+          const dVal = dates[si] || '';
+          if (dVal.startsWith('NC:')) return 'x';
+          return x || '·';
+        }).join('');
         const eff = this.effectiveForDim(s) || '·';
         return `${code}(${eff})`.padEnd(11);
       };
@@ -749,7 +760,6 @@ class Model {
       
       const obsArr = Array.isArray(g.observaciones) ? g.observaciones : [g.observaciones];
       const obsLines = [];
-      const dates = (clsData && clsData.fechas && clsData.fechas[this.currentPeriod]) || [];
 
       obsArr.forEach((obsVal, si) => {
         if (obsVal && String(obsVal).trim()) {
@@ -775,8 +785,25 @@ class Model {
     return lines.join('\n');
   }
 
+  parseClassDate(dateStr) {
+    if (!dateStr) return { isNoClass: false, date: '', reason: '' };
+    if (dateStr.startsWith('NC:')) {
+      const parts = dateStr.split(':');
+      const date = parts[1] || '';
+      const reason = parts.slice(2).join(':') || '';
+      return { isNoClass: true, date, reason };
+    }
+    return { isNoClass: false, date: dateStr, reason: '' };
+  }
+
   formatDate(dateStr) {
     if (!dateStr) return '';
+    const parsed = this.parseClassDate(dateStr);
+    if (parsed.isNoClass) {
+      const datePart = parsed.date ? this.formatDate(parsed.date) : '';
+      const reasonPart = parsed.reason ? ` - ${parsed.reason}` : '';
+      return `❌ Sin clase${datePart ? ' (' + datePart + ')' : ''}${reasonPart}`;
+    }
     const parts = dateStr.split('-');
     if (parts.length === 3) {
       return `${parts[2]}/${parts[1]}/${parts[0]}`;

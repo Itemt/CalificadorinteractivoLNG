@@ -23,11 +23,12 @@ Una aplicación de escritorio rápida, **100% offline** y amigable, diseñada pa
   - 🌱 **En Proceso:** 2 o más componentes en En Proceso.
 - **Múltiples Materias:** Gestiona diferentes grupos o materias con pestañas. Cada materia se puede **renombrar y editar** (incluyendo el número de sesiones) con el ícono ✏️ en cualquier momento.
 - **Asistencia por Sesión:** Botones de ✓/✗ por cada sesión de clase registran la asistencia en tiempo real. Las ausencias se reflejan en el reporte exportado.
+- **Fechas por Sesión:** Permite ingresar la fecha de cada clase usando un selector de tipo fecha (`<input type="date">`) por cada sesión del periodo actual. Estas fechas se enlazan automáticamente a las observaciones, tooltips de asistencia y reportes.
 - **Puntos Positivos/Negativos:** Sistema de puntos acumulables por estudiante y por nivel con botones ＋ y −. La fila entera del que lleva más puntos se resalta en verde y la del peor puntaje en rojo (si hay empate, se resaltan todos); en modo claro el tono es un poco más suave para buena lectura.
 - **Calificación Rápida:** Botones de relleno automático (P/A/S) en la cabecera de cada columna para asignar un nivel a toda la clase de un solo clic.
 - **Tour Guiado:** Onboarding paso a paso integrado que inicia automáticamente al crear tu primer archivo y puede repetirse desde el botón "Tour Guiado".
 - **Modo Oscuro / Claro:** Disponible desde la pantalla de inicio y desde la app.
-- **Observaciones (opcional):** por cada estudiante y cada nivel puede abrir «Notas» y escribir un comentario (por ejemplo por qué quedó en Alto o En proceso). Se abre en un modal para no ensanchar la tabla; se guarda al final de la fila en el CSV. Los archivos viejos sin esa columna siguen abriendo bien.
+- **Observaciones (opcional):** por cada estudiante y cada nivel puede abrir «Notas» y escribir un comentario (por ejemplo por qué quedó en Alto o En proceso). Se abre en un modal para no ensanchar la tabla; muestra la fecha correspondiente de la clase y se guarda al final de la fila en el CSV. Los archivos viejos sin esa columna siguen abriendo bien.
 
 ---
 
@@ -37,7 +38,7 @@ Dirígete a la pestaña de [**Releases**](../../releases/latest) de este reposit
 
 ### Windows
 
-1. Descarga `Calificador Interactivo Setup 1.3.0.exe`.
+1. Descarga `Calificador Interactivo Setup 1.4.0.exe`.
 2. Ejecútalo. El instalador **no requiere permisos de administrador** y se instala por usuario.
 3. Se crearán accesos directos en el **Escritorio** y el **Menú de Inicio** automáticamente.
 
@@ -52,7 +53,7 @@ Al ser software independiente sin firma de código comercial, Windows puede most
 
 ### macOS
 
-1. Descarga `Calificador Interactivo-1.3.0.dmg`.
+1. Descarga `Calificador Interactivo-1.4.0.dmg`.
 2. Ábrelo y arrastra el ícono a tu carpeta **Aplicaciones**.
 3. La primera vez, haz clic derecho → *Abrir* si macOS muestra una advertencia de desarrollador no verificado.
 

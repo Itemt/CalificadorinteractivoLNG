@@ -455,6 +455,10 @@ class Controller {
       if (aboutModal) aboutModal.style.display = 'none';
     };
 
+    const closeUpdateModal = () => {
+      if (updateModal) updateModal.style.display = 'none';
+    };
+
     if (btnCloseAboutModal) btnCloseAboutModal.onclick = closeAbout;
     if (btnCloseAbout) btnCloseAbout.onclick = closeAbout;
 
@@ -463,6 +467,15 @@ class Controller {
       aboutModal.onclick = (e) => {
         if (e.target === aboutModal) {
           closeAbout();
+        }
+      };
+    }
+
+    // Cerrar modal de actualización al hacer clic fuera del contenido
+    if (updateModal) {
+      updateModal.onclick = (e) => {
+        if (e.target === updateModal) {
+          closeUpdateModal();
         }
       };
     }
@@ -559,9 +572,11 @@ class Controller {
     });
 
     // Vincular acciones de los botones de actualización
-    btnCancelUpdate.onclick = () => {
-      updateModal.style.display = 'none';
-    };
+    const btnIgnoreUpdateClose = document.getElementById('btnIgnoreUpdateClose');
+    btnCancelUpdate.onclick = closeUpdateModal;
+    if (btnIgnoreUpdateClose) {
+      btnIgnoreUpdateClose.onclick = closeUpdateModal;
+    }
 
     btnDownloadUpdate.onclick = async () => {
       if (isDownloaded) {

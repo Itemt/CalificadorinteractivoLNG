@@ -123,7 +123,7 @@ function createWindow () {
     setupAutoUpdater(mainWindow);
     setTimeout(() => {
       if (app.isPackaged) {
-        autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+        autoUpdater.checkForUpdates().catch((err) => {
           writeLog('Error checking for updates on startup: ' + err.message);
         });
       } else {

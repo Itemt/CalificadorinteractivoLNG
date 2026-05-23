@@ -166,6 +166,7 @@ Carlos Gómez
     <div id="autoSaveIndicator" style="position:absolute; top:26px; left:230px; color:var(--s-color); font-size:0.85rem; font-weight:800; opacity:0; transition:opacity 0.5s;">☁️ Autoguardando...</div>
     <button class="theme-toggle" id="tourToggle" title="Repetir el Tour"><span>❓</span> Tour Guiado</button>
     <button class="theme-toggle" id="themeToggle" title="Cambiar tema">☀️ Modo Claro</button>
+    <button class="theme-toggle" id="aboutToggle" title="Acerca de">ℹ️ Acerca de</button>
     <div class="hero-content">
       <div class="hero-icon">🎓</div>
       <h1>Calificador Interactivo LNG</h1>
@@ -327,6 +328,30 @@ Carlos Gómez
       <div class="modal-actions" id="updateModalActions" style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
         <button id="btnCancelUpdate" class="btn-cancel" style="flex: 1;">Ignorar</button>
         <button id="btnDownloadUpdate" class="btn-save" style="flex: 1; background: var(--accent); border-color: var(--accent); color: #fff;">Descargar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ABOUT MODAL ===== -->
+  <div class="modal-overlay" id="aboutModal" style="display: none; z-index: 10002;">
+    <div class="modal-card" style="text-align: center; max-width: 420px; position: relative;">
+      <button type="button" class="close-modal-btn" id="btnCloseAboutModal" title="Cerrar">&times;</button>
+      <div style="font-size: 3rem; margin-bottom: 10px;">🎓</div>
+      <h2 style="color: var(--accent); margin-bottom: 5px;">Calificador Interactivo</h2>
+      <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 15px;">v1.4.7</p>
+      
+      <p style="color: var(--white); font-size: 0.92rem; line-height: 1.6; margin-bottom: 20px;">
+        Una herramienta de valoración por dimensiones diseñada para facilitar el seguimiento del desempeño escolar en las áreas cognitiva, praxiológica y axiológica.
+      </p>
+
+      <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-bottom: 15px; text-align: left; font-size: 0.85rem; color: var(--muted);">
+        <p style="margin-bottom: 6px;"><strong>Licencia:</strong> ISC</p>
+        <p><strong>Repositorio:</strong> GitHub (Itemt/CalificadorinteractivoLNG)</p>
+      </div>
+
+      <div class="modal-actions" style="display: flex; flex-direction: column; gap: 8px;">
+        <button id="btnCheckUpdatesManual" class="btn-save" style="width: 100%; background: linear-gradient(135deg, var(--accent), #b47aff); border: none; color: #fff; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">🔍 Buscar Actualizaciones</button>
+        <button id="btnCloseAbout" class="btn-cancel" style="width: 100%;">Cerrar</button>
       </div>
     </div>
   </div>

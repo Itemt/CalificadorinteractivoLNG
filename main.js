@@ -53,6 +53,7 @@ function setupAutoUpdater(mainWindow) {
 
   autoUpdater.on('update-not-available', (info) => {
     writeLog('Update not available: ' + JSON.stringify(info));
+    mainWindow.webContents.send('update-not-available', info);
   });
 
   autoUpdater.on('error', (err) => {

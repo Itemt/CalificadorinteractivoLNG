@@ -419,6 +419,7 @@ class Controller {
   initUpdater() {
     if (!window.electronAPI) return;
 
+    // Modales y botones de actualización
     const updateModal = document.getElementById('updateModal');
     const updateModalTitle = document.getElementById('updateModalTitle');
     const updateModalMsg = document.getElementById('updateModalMsg');
@@ -430,15 +431,57 @@ class Controller {
     const btnDownloadUpdate = document.getElementById('btnDownloadUpdate');
     const updateModalActions = document.getElementById('updateModalActions');
 
+    // Modal y botones de Acerca de
+    const aboutModal = document.getElementById('aboutModal');
+    const aboutToggle = document.getElementById('aboutToggle');
+    const btnCloseAboutModal = document.getElementById('btnCloseAboutModal');
+    const btnCloseAbout = document.getElementById('btnCloseAbout');
+    const btnCheckUpdatesManual = document.getElementById('btnCheckUpdatesManual');
+
     if (!updateModal) return;
 
     let updateInfo = null;
     let isDownloaded = false;
+    let isManualCheck = false;
+
+    // Control del modal Acerca de
+    if (aboutToggle && aboutModal) {
+      aboutToggle.onclick = () => {
+        aboutModal.style.display = 'flex';
+      };
+    }
+
+    const closeAbout = () => {
+      if (aboutModal) aboutModal.style.display = 'none';
+    };
+
+    if (btnCloseAboutModal) btnCloseAboutModal.onclick = closeAbout;
+    if (btnCloseAbout) btnCloseAbout.onclick = closeAbout;
+
+    // Cerrar modal Acerca de al hacer clic fuera del contenido del modal
+    if (aboutModal) {
+      aboutModal.onclick = (e) => {
+        if (e.target === aboutModal) {
+          closeAbout();
+        }
+      };
+    }
 
     // Escuchar eventos de actualización desde el proceso principal
     window.electronAPI.onUpdateAvailable((info) => {
       updateInfo = info;
       isDownloaded = false;
+
+      // Si es una comprobación manual, cerramos el modal de Acerca de para enfocar el de actualización
+      if (isManualCheck) {
+        closeAbout();
+        isManualCheck = false;
+        if (btnCheckUpdatesManual) {
+          btnCheckUpdatesManual.disabled = false;
+          btnCheckUpdatesManual.textContent = '🔍 Buscar Actualizaciones';
+        }
+      }
+
       updateModalTitle.textContent = '✨ Actualización Disponible';
       updateModalMsg.innerHTML = `Una nueva versión <strong>v${info.version}</strong> está disponible.<br><br>¿Deseas descargarla e instalarla ahora?`;
       updateProgressContainer.style.display = 'none';
@@ -448,6 +491,17 @@ class Controller {
       btnCancelUpdate.textContent = 'Ignorar';
       updateModalActions.style.display = 'flex';
       updateModal.style.display = 'flex';
+    });
+
+    window.electronAPI.onUpdateNotAvailable((info) => {
+      if (isManualCheck) {
+        isManualCheck = false;
+        if (btnCheckUpdatesManual) {
+          btnCheckUpdatesManual.disabled = false;
+          btnCheckUpdatesManual.textContent = '🔍 Buscar Actualizaciones';
+        }
+        this.view.showToast('✅ Ya tienes la versión más reciente.');
+      }
     });
 
     window.electronAPI.onDownloadProgress((progress) => {
@@ -485,6 +539,16 @@ class Controller {
 
     window.electronAPI.onUpdateError((errorMsg) => {
       console.error('Error de actualización:', errorMsg);
+
+      if (isManualCheck) {
+        isManualCheck = false;
+        if (btnCheckUpdatesManual) {
+          btnCheckUpdatesManual.disabled = false;
+          btnCheckUpdatesManual.textContent = '🔍 Buscar Actualizaciones';
+        }
+        this.view.showToast('❌ Error al buscar actualizaciones.');
+      }
+
       if (updateModal.style.display === 'flex' && !isDownloaded) {
         updateModalTitle.textContent = '⚠️ Error de Actualización';
         updateModalMsg.innerHTML = `No se pudo descargar la actualización.<br><br><span style="font-size:0.85rem;color:var(--a-color);">${errorMsg}</span>`;
@@ -494,7 +558,7 @@ class Controller {
       }
     });
 
-    // Vincular acciones de los botones
+    // Vincular acciones de los botones de actualización
     btnCancelUpdate.onclick = () => {
       updateModal.style.display = 'none';
     };
@@ -508,5 +572,23 @@ class Controller {
         await window.electronAPI.downloadUpdate();
       }
     };
+
+    // Búsqueda manual de actualizaciones
+    if (btnCheckUpdatesManual) {
+      btnCheckUpdatesManual.onclick = async () => {
+        isManualCheck = true;
+        btnCheckUpdatesManual.disabled = true;
+        btnCheckUpdatesManual.textContent = '🔍 Buscando actualizaciones...';
+        try {
+          await window.electronAPI.checkForUpdates();
+        } catch (err) {
+          console.error(err);
+          isManualCheck = false;
+          btnCheckUpdatesManual.disabled = false;
+          btnCheckUpdatesManual.textContent = '🔍 Buscar Actualizaciones';
+          this.view.showToast('❌ Error al conectar con el servidor.');
+        }
+      };
+    }
   }
 }

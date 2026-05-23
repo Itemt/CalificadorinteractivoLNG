@@ -583,10 +583,12 @@ class Controller {
           await window.electronAPI.checkForUpdates();
         } catch (err) {
           console.error(err);
-          isManualCheck = false;
-          btnCheckUpdatesManual.disabled = false;
-          btnCheckUpdatesManual.textContent = '🔍 Buscar Actualizaciones';
-          this.view.showToast('❌ Error al conectar con el servidor.');
+          if (isManualCheck) {
+            isManualCheck = false;
+            btnCheckUpdatesManual.disabled = false;
+            btnCheckUpdatesManual.textContent = '🔍 Buscar Actualizaciones';
+            this.view.showToast('❌ Error al conectar con el servidor.');
+          }
         }
       };
     }

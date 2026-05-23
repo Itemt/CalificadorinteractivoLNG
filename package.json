@@ -1,6 +1,6 @@
 {
   "name": "calificador-interactivo",
-  "version": "1.4.8",
+  "version": "1.4.9",
   "description": "Calificador interactivo para profesores",
   "main": "main.js",
   "scripts": {
@@ -93,7 +93,10 @@
       "deleteAppDataOnUninstall": false
     },
     "publish": [
-      "github"
+      {
+        "provider": "github",
+        "releaseType": "release"
+      }
     ]
   },
   "devDependencies": {

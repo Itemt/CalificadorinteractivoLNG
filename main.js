@@ -2,6 +2,10 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const { autoUpdater } = require('electron-updater');
+
+// Configure autoUpdater
+autoUpdater.autoDownload = false;
 
 // ─── Global crash logger (se guarda en la carpeta de datos del programa) ──────
 let logPath;
@@ -16,6 +20,13 @@ function writeLog(msg) {
   } catch (_) {}
 }
 
+// Configurar logger para autoUpdater
+autoUpdater.logger = {
+  info: (msg) => writeLog('INFO: ' + msg),
+  warn: (msg) => writeLog('WARN: ' + msg),
+  error: (msg) => writeLog('ERROR: ' + msg)
+};
+
 process.on('uncaughtException', (err) => {
   writeLog('uncaughtException: ' + err.stack);
   app.quit();
@@ -29,6 +40,36 @@ process.on('unhandledRejection', (reason) => {
 // Necesario para que Electron funcione desde rutas de red en Windows (ej. Parallels)
 app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('disable-setuid-sandbox');
+
+function setupAutoUpdater(mainWindow) {
+  autoUpdater.on('checking-for-update', () => {
+    writeLog('Checking for update...');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    writeLog('Update available: ' + JSON.stringify(info));
+    mainWindow.webContents.send('update-available', info);
+  });
+
+  autoUpdater.on('update-not-available', (info) => {
+    writeLog('Update not available: ' + JSON.stringify(info));
+  });
+
+  autoUpdater.on('error', (err) => {
+    const errMsg = err && (err.stack || err.message || err);
+    writeLog('Update error: ' + errMsg);
+    mainWindow.webContents.send('update-error', err.message || String(err));
+  });
+
+  autoUpdater.on('download-progress', (progressObj) => {
+    mainWindow.webContents.send('download-progress', progressObj);
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    writeLog('Update downloaded: ' + JSON.stringify(info));
+    mainWindow.webContents.send('update-downloaded', info);
+  });
+}
 
 function createWindow () {
   writeLog('createWindow() called. __dirname=' + __dirname);
@@ -76,6 +117,18 @@ function createWindow () {
     writeLog('Loading index.html...');
     mainWindow.loadFile('index.html');
     writeLog('Window created successfully.');
+
+    // Configurar y buscar actualizaciones
+    setupAutoUpdater(mainWindow);
+    setTimeout(() => {
+      if (app.isPackaged) {
+        autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+          writeLog('Error checking for updates on startup: ' + err.message);
+        });
+      } else {
+        writeLog('App not packaged, skipping auto check for updates.');
+      }
+    }, 5000);
   } catch (err) {
     writeLog('createWindow error: ' + err.stack);
   }
@@ -157,5 +210,40 @@ ipcMain.handle('fs:saveBackup', async (event, data) => {
   } catch (err) {
     console.error("Backup failed:", err);
     return false;
+  }
+});
+
+// IPC Handlers for Auto-updater
+ipcMain.handle('app:checkForUpdates', async () => {
+  try {
+    if (app.isPackaged) {
+      return await autoUpdater.checkForUpdates();
+    }
+    writeLog('app:checkForUpdates called in development, skipping.');
+    return null;
+  } catch (err) {
+    writeLog('app:checkForUpdates error: ' + err.message);
+    throw err;
+  }
+});
+
+ipcMain.handle('app:downloadUpdate', async () => {
+  try {
+    if (app.isPackaged) {
+      return await autoUpdater.downloadUpdate();
+    }
+    writeLog('app:downloadUpdate called in development, skipping.');
+    return null;
+  } catch (err) {
+    writeLog('app:downloadUpdate error: ' + err.message);
+    throw err;
+  }
+});
+
+ipcMain.handle('app:quitAndInstall', () => {
+  try {
+    autoUpdater.quitAndInstall();
+  } catch (err) {
+    writeLog('app:quitAndInstall error: ' + err.message);
   }
 });

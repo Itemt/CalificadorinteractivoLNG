@@ -1,6 +1,6 @@
 {
   "name": "calificador-interactivo",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "description": "Calificador interactivo para profesores",
   "main": "main.js",
   "scripts": {
@@ -30,7 +30,13 @@
       "category": "public.app-category.education",
       "icon": "build/icon.icns",
       "target": [
-        { "target": "dmg", "arch": ["x64", "arm64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "darkModeSupport": true
     },
@@ -38,15 +44,31 @@
       "title": "Calificador Interactivo",
       "icon": "build/icon.icns",
       "contents": [
-        { "x": 130, "y": 220 },
-        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
       ],
-      "window": { "width": 540, "height": 380 }
+      "window": {
+        "width": 540,
+        "height": 380
+      }
     },
     "win": {
       "icon": "build/icon.ico",
       "target": [
-        { "target": "nsis", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "requestedExecutionLevel": "asInvoker"
     },
@@ -63,10 +85,15 @@
       "license": "licencia.txt",
       "deleteAppDataOnUninstall": false
     },
-    "publish": ["github"]
+    "publish": [
+      "github"
+    ]
   },
   "devDependencies": {
     "electron": "^41.5.1",
     "electron-builder": "^26.8.1"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.3"
   }
 }

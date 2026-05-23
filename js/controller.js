@@ -36,6 +36,7 @@ class Controller {
     }
     
     this.initTour(!lastPath);
+    this.initUpdater();
   }
 
   initTour(showWelcomeTour = false) {
@@ -413,5 +414,99 @@ class Controller {
         setTimeout(() => indicator.style.opacity = '0', 2000);
       }
     }, 60000);
+  }
+
+  initUpdater() {
+    if (!window.electronAPI) return;
+
+    const updateModal = document.getElementById('updateModal');
+    const updateModalTitle = document.getElementById('updateModalTitle');
+    const updateModalMsg = document.getElementById('updateModalMsg');
+    const updateProgressContainer = document.getElementById('updateProgressContainer');
+    const updateProgressBar = document.getElementById('updateProgressBar');
+    const updateProgressPercent = document.getElementById('updateProgressPercent');
+    const updateProgressSpeed = document.getElementById('updateProgressSpeed');
+    const btnCancelUpdate = document.getElementById('btnCancelUpdate');
+    const btnDownloadUpdate = document.getElementById('btnDownloadUpdate');
+    const updateModalActions = document.getElementById('updateModalActions');
+
+    if (!updateModal) return;
+
+    let updateInfo = null;
+    let isDownloaded = false;
+
+    // Escuchar eventos de actualización desde el proceso principal
+    window.electronAPI.onUpdateAvailable((info) => {
+      updateInfo = info;
+      isDownloaded = false;
+      updateModalTitle.textContent = '✨ Actualización Disponible';
+      updateModalMsg.innerHTML = `Una nueva versión <strong>v${info.version}</strong> está disponible.<br><br>¿Deseas descargarla e instalarla ahora?`;
+      updateProgressContainer.style.display = 'none';
+      btnDownloadUpdate.textContent = 'Descargar';
+      btnDownloadUpdate.style.display = 'block';
+      btnDownloadUpdate.disabled = false;
+      btnCancelUpdate.textContent = 'Ignorar';
+      updateModalActions.style.display = 'flex';
+      updateModal.style.display = 'flex';
+    });
+
+    window.electronAPI.onDownloadProgress((progress) => {
+      updateProgressContainer.style.display = 'block';
+      btnDownloadUpdate.style.display = 'none'; // ocultar botón de descargar durante el progreso
+      btnCancelUpdate.textContent = 'Descargar en segundo plano';
+      const percent = Math.round(progress.percent || 0);
+      updateProgressBar.style.width = `${percent}%`;
+      updateProgressPercent.textContent = `${percent}%`;
+      
+      const speed = progress.bytesPerSecond;
+      let speedText = '';
+      if (speed > 1024 * 1024) {
+        speedText = `${(speed / (1024 * 1024)).toFixed(2)} MB/s`;
+      } else if (speed > 1024) {
+        speedText = `${(speed / 1024).toFixed(2)} KB/s`;
+      } else {
+        speedText = `${speed} B/s`;
+      }
+      updateProgressSpeed.textContent = speedText;
+    });
+
+    window.electronAPI.onUpdateDownloaded((info) => {
+      isDownloaded = true;
+      updateModalTitle.textContent = '🎉 Descarga Completa';
+      updateModalMsg.innerHTML = `La versión <strong>v${info.version}</strong> se descargó correctamente.<br><br>Haz clic en "Reiniciar y Actualizar" para aplicar la actualización.`;
+      updateProgressContainer.style.display = 'none';
+      btnDownloadUpdate.textContent = 'Reiniciar y Actualizar';
+      btnDownloadUpdate.style.display = 'block';
+      btnDownloadUpdate.disabled = false;
+      btnCancelUpdate.textContent = 'Más tarde';
+      updateModalActions.style.display = 'flex';
+      updateModal.style.display = 'flex';
+    });
+
+    window.electronAPI.onUpdateError((errorMsg) => {
+      console.error('Error de actualización:', errorMsg);
+      if (updateModal.style.display === 'flex' && !isDownloaded) {
+        updateModalTitle.textContent = '⚠️ Error de Actualización';
+        updateModalMsg.innerHTML = `No se pudo descargar la actualización.<br><br><span style="font-size:0.85rem;color:var(--a-color);">${errorMsg}</span>`;
+        updateProgressContainer.style.display = 'none';
+        btnDownloadUpdate.style.display = 'none';
+        btnCancelUpdate.textContent = 'Cerrar';
+      }
+    });
+
+    // Vincular acciones de los botones
+    btnCancelUpdate.onclick = () => {
+      updateModal.style.display = 'none';
+    };
+
+    btnDownloadUpdate.onclick = async () => {
+      if (isDownloaded) {
+        window.electronAPI.quitAndInstall();
+      } else {
+        btnDownloadUpdate.disabled = true;
+        btnDownloadUpdate.textContent = 'Iniciando descarga...';
+        await window.electronAPI.downloadUpdate();
+      }
+    };
   }
 }

@@ -887,9 +887,21 @@ class Model {
     this.appData.classes = newClasses;
   }
 
+  getGDriveCredentials() {
+    const clientId = CONFIG.GOOGLE_CLIENT_ID || localStorage.getItem('calificador_gdrive_client_id') || '';
+    const clientSecret = CONFIG.GOOGLE_CLIENT_SECRET || localStorage.getItem('calificador_gdrive_client_secret') || '';
+    return { clientId, clientSecret };
+  }
+
+  saveGDriveCredentials(clientId, clientSecret) {
+    if (clientId) localStorage.setItem('calificador_gdrive_client_id', clientId.trim());
+    if (clientSecret) localStorage.setItem('calificador_gdrive_client_secret', clientSecret.trim());
+  }
+
   async exchangeOAuthCode(code) {
-    if (!CONFIG.GOOGLE_CLIENT_ID || !CONFIG.GOOGLE_CLIENT_SECRET) {
-      throw new Error('Las credenciales de Google Drive no están configuradas en js/config.js');
+    const creds = this.getGDriveCredentials();
+    if (!creds.clientId || !creds.clientSecret) {
+      throw new Error('Las credenciales de Google Drive no están configuradas.');
     }
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -898,8 +910,8 @@ class Model {
       },
       body: new URLSearchParams({
         code,
-        client_id: CONFIG.GOOGLE_CLIENT_ID,
-        client_secret: CONFIG.GOOGLE_CLIENT_SECRET,
+        client_id: creds.clientId,
+        client_secret: creds.clientSecret,
         redirect_uri: 'http://localhost:8585',
         grant_type: 'authorization_code'
       })
@@ -925,8 +937,9 @@ class Model {
     if (!refreshToken) {
       throw new Error('No hay token de actualización disponible. Por favor, vuelve a conectar Google Drive.');
     }
-    if (!CONFIG.GOOGLE_CLIENT_ID || !CONFIG.GOOGLE_CLIENT_SECRET) {
-      throw new Error('Las credenciales de Google Drive no están configuradas en js/config.js');
+    const creds = this.getGDriveCredentials();
+    if (!creds.clientId || !creds.clientSecret) {
+      throw new Error('Las credenciales de Google Drive no están configuradas.');
     }
 
     const response = await fetch('https://oauth2.googleapis.com/token', {
@@ -935,8 +948,8 @@ class Model {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams({
-        client_id: CONFIG.GOOGLE_CLIENT_ID,
-        client_secret: CONFIG.GOOGLE_CLIENT_SECRET,
+        client_id: creds.clientId,
+        client_secret: creds.clientSecret,
         refresh_token: refreshToken,
         grant_type: 'refresh_token'
       })

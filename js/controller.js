@@ -165,6 +165,10 @@ class Controller {
     const btnGDrive = document.getElementById('btnGDrive');
     if (btnGDrive) btnGDrive.onclick = this.handleGDriveClick.bind(this);
 
+    // Google Drive Config Modal Save Button
+    const btnSaveGDriveConfig = document.getElementById('btnSaveGDriveConfig');
+    if (btnSaveGDriveConfig) btnSaveGDriveConfig.onclick = this.handleSaveGDriveConfig.bind(this);
+
     // Fast-fill header buttons (P⬇, A⬇, S⬇)
     document.querySelectorAll('.h-btn').forEach(btn => {
       btn.onclick = () => {
@@ -659,41 +663,62 @@ class Controller {
         this.view.showToast('☁️ Google Drive desvinculado');
       }
     } else {
-      if (!CONFIG.GOOGLE_CLIENT_ID || !CONFIG.GOOGLE_CLIENT_SECRET) {
-        this.view.showError('Las credenciales de Google Drive no están configuradas. Por favor, configúralas en el archivo js/config.js.');
+      const creds = this.model.getGDriveCredentials();
+      if (!creds.clientId || !creds.clientSecret) {
+        this.view.showGDriveConfigModal(creds.clientId, creds.clientSecret);
         return;
       }
+      this.startGDriveOAuthFlow();
+    }
+  }
 
-      this.view.updateGDriveUI('syncing', 'Conectando...');
-      try {
-        const serverPromise = window.electronAPI.startOAuthServer();
-        
-        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` + new URLSearchParams({
-          client_id: CONFIG.GOOGLE_CLIENT_ID,
-          redirect_uri: 'http://localhost:8585',
-          response_type: 'code',
-          scope: 'https://www.googleapis.com/auth/drive.file',
-          access_type: 'offline',
-          prompt: 'consent'
-        }).toString();
+  async handleSaveGDriveConfig() {
+    const clientId = this.view.gdriveClientId.value.trim();
+    const clientSecret = this.view.gdriveClientSecret.value.trim();
 
-        await window.electronAPI.openExternal(authUrl);
+    if (!clientId || !clientSecret) {
+      this.view.showError('Debes ingresar tanto el Client ID como el Client Secret para continuar.');
+      return;
+    }
 
-        const code = await serverPromise;
-        await this.model.exchangeOAuthCode(code);
-        
-        this.view.updateGDriveUI('connected');
-        this.view.showToast('☁️ Google Drive vinculado con éxito');
+    this.model.saveGDriveCredentials(clientId, clientSecret);
+    this.view.hideGDriveConfigModal();
+    this.startGDriveOAuthFlow();
+  }
 
-        if (this.model.currentFileHandle || Object.keys(this.model.appData.classes).length > 0) {
-          this.syncGDrive().catch(console.error);
-        }
-      } catch (err) {
-        console.error('Error connecting to Google Drive:', err);
-        this.model.disconnectGoogleDrive();
-        this.view.updateGDriveUI('disconnected');
-        this.view.showError('No se pudo vincular con Google Drive: ' + err.message);
+  async startGDriveOAuthFlow() {
+    const creds = this.model.getGDriveCredentials();
+    if (!creds.clientId || !creds.clientSecret) return;
+
+    this.view.updateGDriveUI('syncing', 'Conectando...');
+    try {
+      const serverPromise = window.electronAPI.startOAuthServer();
+      
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` + new URLSearchParams({
+        client_id: creds.clientId,
+        redirect_uri: 'http://localhost:8585',
+        response_type: 'code',
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        access_type: 'offline',
+        prompt: 'consent'
+      }).toString();
+
+      await window.electronAPI.openExternal(authUrl);
+
+      const code = await serverPromise;
+      await this.model.exchangeOAuthCode(code);
+      
+      this.view.updateGDriveUI('connected');
+      this.view.showToast('☁️ Google Drive vinculado con éxito');
+
+      if (this.model.currentFileHandle || Object.keys(this.model.appData.classes).length > 0) {
+        this.syncGDrive().catch(console.error);
       }
+    } catch (err) {
+      console.error('Error connecting to Google Drive:', err);
+      this.model.disconnectGoogleDrive();
+      this.view.updateGDriveUI('disconnected');
+      this.view.showError('No se pudo vincular con Google Drive: ' + err.message);
     }
   }
 

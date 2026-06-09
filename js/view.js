@@ -13,6 +13,17 @@ class View {
     if (!window.electronAPI && this.btnGDrive) {
       this.btnGDrive.style.display = 'none';
     }
+
+    // Google Drive Config Modal
+    this.gdriveConfigModal = document.getElementById('gdriveConfigModal');
+    this.gdriveClientId = document.getElementById('gdriveClientId');
+    this.gdriveClientSecret = document.getElementById('gdriveClientSecret');
+    this.btnSaveGDriveConfig = document.getElementById('btnSaveGDriveConfig');
+    this.btnCancelGDriveConfig = document.getElementById('btnCancelGDriveConfig');
+
+    if (this.btnCancelGDriveConfig) {
+      this.btnCancelGDriveConfig.onclick = () => this.hideGDriveConfigModal();
+    }
     
     // Rename Class Modal
     this.renameClassModal = document.getElementById('renameClassModal');
@@ -1108,6 +1119,19 @@ class View {
     } else {
       this.btnGDrive.textContent = text || '☁️ Conectar Drive';
       this.btnGDrive.title = 'Vincular la aplicación con Google Drive para respaldos automáticos.';
+    }
+  }
+
+  showGDriveConfigModal(clientId, clientSecret) {
+    if (!this.gdriveConfigModal) return;
+    if (this.gdriveClientId) this.gdriveClientId.value = clientId || '';
+    if (this.gdriveClientSecret) this.gdriveClientSecret.value = clientSecret || '';
+    this.gdriveConfigModal.style.display = 'flex';
+  }
+
+  hideGDriveConfigModal() {
+    if (this.gdriveConfigModal) {
+      this.gdriveConfigModal.style.display = 'none';
     }
   }
 }

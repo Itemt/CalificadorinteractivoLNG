@@ -67,7 +67,12 @@ class Model {
         alto: [],
         superior: []
       },
-      observacion: ''
+      observaciones: {
+        inicial: [],
+        basico: [],
+        alto: [],
+        superior: []
+      }
     };
     
     CONFIG.PERIODS.forEach(p => {
@@ -241,22 +246,20 @@ class Model {
 
   generateCSV() {
     // Encabezado descriptivo — las columnas de sesión varían por clase según NumSesiones
-    const lines = ['ClaseId,NombreClase,NumSesiones,Periodo,Estudiante,[Conceptos x N],[Practica x N],[Comportamiento x N],[Autoevaluacion x N],[Asistencia x N],[Fechas x N],Puntos,[Observaciones x N],ObservacionClase'];
+    const lines = ['ClaseId,NombreClase,NumSesiones,Periodo,Estudiante,[Conceptos x N],[Practica x N],[Comportamiento x N],[Autoevaluacion x N],[Asistencia x N],[Fechas x N],Puntos,[Observaciones x N],[ObservacionesClase x N]'];
     
     const pad = (arr, n) => Array.from({ length: n }, (_, i) => arr[i] || '');
     const padQuoted = (arr, n) => Array.from({ length: n }, (_, i) => arr[i] ? `"${String(arr[i]).replace(/"/g, '""')}"` : '');
 
     Object.values(this.appData.classes).forEach(cls => {
       const n = cls.numSesiones || 3;
-      const classObs = cls.observacion || '';
-      const cleanClassObs = classObs.replace(/"/g, '""');
-
       CONFIG.PERIODS.forEach(period => {
         const periodId = period.id;
         const gradesForPeriod = this.appData.grades[periodId][cls.id];
         if (!gradesForPeriod) return;
 
         const datesArr = (cls.fechas && cls.fechas[periodId]) ? cls.fechas[periodId] : [];
+        const classObsArr = (cls.observaciones && cls.observaciones[periodId]) ? cls.observaciones[periodId] : [];
 
         cls.students.forEach((studentName, idx) => {
           const g = gradesForPeriod[idx];
@@ -281,7 +284,7 @@ class Model {
             ...padQuoted(datesArr     || [], n),
             g.puntos || 0,
             ...padQuoted(obsArr, n),
-            `"${cleanClassObs}"`
+            ...padQuoted(classObsArr  || [], n)
           ];
           lines.push(row.join(','));
         });
@@ -363,9 +366,14 @@ class Model {
         observaciones[0] = oldObs || null;
       }
 
-      let classObs = '';
-      if (cols.length > ptsIdx + 1 + numSesiones) {
-        classObs = cols[ptsIdx + 1 + numSesiones] ? cols[ptsIdx + 1 + numSesiones].replace(/""/g, '"') : '';
+      let classObsArr = [];
+      if (cols.length >= ptsIdx + 1 + numSesiones * 2) {
+        // Formato nuevo con observaciones por sesión
+        classObsArr = slice(ptsIdx + 1 + numSesiones).map(v => v ? v.replace(/""/g, '"') : '');
+      } else if (cols.length > ptsIdx + 1 + numSesiones) {
+        // Formato v1.6.0 intermedio (una sola columna de observaciones)
+        const singleObs = (cols[ptsIdx + 1 + numSesiones] || '').replace(/""/g, '"');
+        classObsArr = Array.from({ length: numSesiones }, (_, i) => i === 0 ? singleObs : '');
       }
 
       if (!newAppData.classes[classId]) {
@@ -380,7 +388,12 @@ class Model {
             alto: [],
             superior: []
           },
-          observacion: classObs
+          observaciones: {
+            inicial: [],
+            basico: [],
+            alto: [],
+            superior: []
+          }
         };
         CONFIG.PERIODS.forEach(p => {
           newAppData.grades[p.id][classId] = [];
@@ -397,14 +410,22 @@ class Model {
             superior: []
           };
         }
-        if (!newAppData.classes[classId].observacion && classObs) {
-          newAppData.classes[classId].observacion = classObs;
+        if (!newAppData.classes[classId].observaciones) {
+          newAppData.classes[classId].observaciones = {
+            inicial: [],
+            basico: [],
+            alto: [],
+            superior: []
+          };
         }
       }
       
       const cls = newAppData.classes[classId];
       if (hasFechas && period) {
         cls.fechas[period] = fArr.map(v => v || '');
+      }
+      if (classObsArr.length > 0 && period) {
+        cls.observaciones[period] = classObsArr;
       }
 
       let studentIdx = cls.students.indexOf(studentName);
@@ -825,11 +846,29 @@ class Model {
     return dateStr;
   }
 
-  updateClassObservation(text) {
+  updateClassObservation(sessionIdx, text) {
     if (!this.currentClass) return;
     const cls = this.getCurrentClassData();
     if (!cls) return;
-    cls.observacion = text;
+    
+    if (!cls.observaciones) {
+      cls.observaciones = {
+        inicial: [],
+        basico: [],
+        alto: [],
+        superior: []
+      };
+    }
+    
+    if (!cls.observaciones[this.currentPeriod]) {
+      cls.observaciones[this.currentPeriod] = [];
+    }
+    
+    while (cls.observaciones[this.currentPeriod].length <= sessionIdx) {
+      cls.observaciones[this.currentPeriod].push('');
+    }
+    
+    cls.observaciones[this.currentPeriod][sessionIdx] = text;
   }
 
   reorderClasses(draggedId, targetId) {

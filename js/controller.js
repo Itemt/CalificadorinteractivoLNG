@@ -195,6 +195,7 @@ class Controller {
     );
 
     this.view.renderClassObservation(
+      this.model.currentPeriod,
       clsData,
       this.handleClassObsChange.bind(this),
       this.handleClassObsSave.bind(this)
@@ -276,8 +277,8 @@ class Controller {
     }
   }
 
-  handleClassObsChange(text) {
-    this.model.updateClassObservation(text);
+  handleClassObsChange(sessionIdx, text) {
+    this.model.updateClassObservation(sessionIdx, text);
   }
 
   handleClassObsSave() {

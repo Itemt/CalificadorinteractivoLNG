@@ -295,10 +295,10 @@ class View {
     }
   }
 
-  renderClassObservation(clsData, onObsChange, onObsSave) {
+  renderClassObservation(currentPeriod, clsData, onObsChange, onObsSave) {
     const bar = document.getElementById('classObsBar');
-    const textarea = document.getElementById('classObsText');
-    if (!bar || !textarea) return;
+    const container = document.getElementById('classObsInputs');
+    if (!bar || !container) return;
 
     if (!clsData) {
       bar.style.display = 'none';
@@ -306,18 +306,74 @@ class View {
     }
 
     bar.style.display = 'flex';
-    
-    if (document.activeElement !== textarea) {
-      textarea.value = clsData.observacion || '';
+
+    const numSesiones = clsData.numSesiones || 3;
+    const dates = (clsData.fechas && clsData.fechas[currentPeriod]) || [];
+    const obsList = (clsData.observaciones && clsData.observaciones[currentPeriod]) || [];
+
+    // Rebuild textareas only if the count changed to prevent losing focus/cursor
+    if (container.children.length !== numSesiones) {
+      container.innerHTML = '';
+      for (let si = 0; si < numSesiones; si++) {
+        const group = document.createElement('div');
+        group.className = 'class-obs-group';
+
+        const header = document.createElement('div');
+        header.className = 'class-obs-group-header';
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'class-obs-group-title';
+        titleSpan.textContent = `Clase ${si + 1}`;
+
+        const dateSpan = document.createElement('span');
+        dateSpan.className = 'class-obs-group-date';
+
+        header.appendChild(titleSpan);
+        header.appendChild(dateSpan);
+
+        const textarea = document.createElement('textarea');
+        textarea.className = 'class-obs-textarea';
+        textarea.placeholder = `Notas de la clase ${si + 1}...`;
+
+        textarea.oninput = () => {
+          onObsChange(si, textarea.value);
+        };
+
+        textarea.onblur = () => {
+          onObsSave();
+        };
+
+        group.appendChild(header);
+        group.appendChild(textarea);
+        container.appendChild(group);
+      }
     }
 
-    textarea.oninput = () => {
-      onObsChange(textarea.value);
-    };
+    // Update dynamic contents focus-safely
+    for (let si = 0; si < numSesiones; si++) {
+      const group = container.children[si];
+      if (!group) continue;
 
-    textarea.onblur = () => {
-      onObsSave();
-    };
+      const dateVal = dates[si] || '';
+      const parsedDate = this.parseClassDate(dateVal);
+      const obsVal = obsList[si] || '';
+
+      group.classList.toggle('no-class', parsedDate.isNoClass);
+
+      const dateSpan = group.querySelector('.class-obs-group-date');
+      if (dateSpan) {
+        if (dateVal) {
+          dateSpan.textContent = this.formatDate(dateVal);
+        } else {
+          dateSpan.textContent = 'Sin fecha';
+        }
+      }
+
+      const textarea = group.querySelector('.class-obs-textarea');
+      if (textarea && document.activeElement !== textarea) {
+        textarea.value = obsVal;
+      }
+    }
   }
 
   getTodayStr() {

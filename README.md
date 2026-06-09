@@ -7,8 +7,9 @@ Una aplicación de escritorio rápida, **100% offline** y amigable, diseñada pa
 ## ✨ Características Principales
 
 - **Multi-Plataforma:** Instaladores nativos para Windows (`.exe`) y macOS (`.dmg`).
-- **100% Offline y Seguro:** Toda la información se guarda localmente en archivos `.csv` en la computadora del profesor. Los datos nunca se suben a la nube.
-- **Autoguardado Inteligente:** Sistema de autoguardado cada 60 segundos que mantiene el archivo siempre actualizado.
+- **100% Offline por Defecto:** Toda la información se guarda localmente en archivos `.csv` en la computadora del profesor.
+- **Respaldo Seguro en la Nube (Opcional):** Permite vincular tu cuenta de Google Drive para subir copias de seguridad de forma segura a una carpeta dedicada llamada `"respaldo calificador"`.
+- **Autoguardado Inteligente:** Sistema de autoguardado local automático cada 60 segundos que sobrescribe tu archivo actual. Los respaldos en Google Drive se actualizan de forma transparente cada 30 minutos (y también al guardar manualmente o presionar Ctrl+S).
 - **Metodología Pedagógica Completa:**
   - 📊 **4 Niveles de Evaluación:** Inicial, Básico, Nivel Alto, Superior — cada uno con historial independiente.
   - 🧠 **4 Componentes por nivel:**
@@ -69,8 +70,10 @@ Al ser software independiente sin firma de código comercial, Windows puede most
 6. **Puntos** → Usa ＋ y − para acumular puntos positivos/negativos por nivel.
 7. **Editar Materia** → Haz clic en ✏️ sobre cualquier pestaña para renombrar o cambiar el número de clases por nivel.
 8. **Observaciones** → Botón «Notas» junto a puntos: texto opcional por estudiante y nivel; útil para Alto/En proceso.
-9. **Guardar** → Usa *Guardar BD* para guardar en el mismo archivo o *Exportar BD* para crear una copia. El autoguardado actúa cada 60 segundos.
-10. **Exportar resumen** → Usa *Copiar a portapapeles* para pegar el reporte en un chat o correo.
+9. **Guardar** → Usa *Guardar BD* para guardar en el mismo archivo, *Exportar BD* para crear una copia, o el atajo de teclado **Ctrl+S** / **Cmd+S** para guardar rápidamente. El autoguardado local actúa cada 60 segundos.
+10. **Sincronización con Google Drive (Opcional)** → Haz clic en `☁️ Conectar Drive` e ingresa tus credenciales. Los respaldos automáticos se subirán cada 30 minutos a la carpeta `"respaldo calificador"` de tu Drive. Al guardar manualmente (Ctrl+S o botón Guardar), se sincronizará inmediatamente.
+    - *Nota de Autenticación:* Si Google te muestra un error 500 o de inicio de sesión en el navegador, copia el enlace de la pestaña de autenticación y ábrelo en una ventana de incógnito/privada en tu navegador.
+11. **Exportar resumen** → Usa *Copiar a portapapeles* para pegar el reporte en un chat o correo.
 
 ---
 

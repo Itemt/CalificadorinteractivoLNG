@@ -1102,7 +1102,7 @@ class View {
 
     if (state === 'connected') {
       this.btnGDrive.classList.add('gdrive-connected');
-      this.btnGDrive.textContent = text || '☁️ Conectado';
+      this.btnGDrive.textContent = text || '☁️ Drive Conectado (Desvincular)';
       this.btnGDrive.title = 'Google Drive conectado. Haz clic para desvincular.';
     } else if (state === 'syncing') {
       this.btnGDrive.classList.add('gdrive-syncing');
@@ -1114,7 +1114,7 @@ class View {
       }
     } else if (state === 'error') {
       this.btnGDrive.classList.add('gdrive-error');
-      this.btnGDrive.textContent = text || '☁️ Error Sync';
+      this.btnGDrive.textContent = text || '⚠️ Error Sync (Reintentar/Desvincular)';
       this.btnGDrive.title = 'Error en la sincronización. Haz clic para reintentar o desvincular.';
     } else {
       this.btnGDrive.textContent = text || '☁️ Conectar Drive';

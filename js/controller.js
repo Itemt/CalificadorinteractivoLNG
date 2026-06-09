@@ -91,6 +91,11 @@ class Controller {
         target: '.action-row',
         title: '💾 Guardar y Exportar',
         text: 'Tus datos se autoguardan cada minuto. Aquí puedes guardar manualmente, exportar a CSV o copiar el resumen al portapapeles.'
+      },
+      {
+        target: '#btnGDrive',
+        title: '☁️ Respaldo en la Nube (Google Drive)',
+        text: 'Vincula tu cuenta de Google. Las copias de seguridad en Google Drive se guardan en la carpeta "respaldo calificador" y se actualizan automáticamente cada 30 minutos (sobrescribiendo la versión anterior). Si guardas manualmente con Ctrl+S o el botón "Guardar cambios", también se sube al instante a Drive. Los autoguardados locales se siguen haciendo cada minuto.'
       }
     ];
 
@@ -123,6 +128,16 @@ class Controller {
   }
 
   bindEvents() {
+    // Ctrl+S / Cmd+S keyboard shortcut
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (Object.keys(this.model.appData.classes).length > 0) {
+          this.handleSaveFile(false);
+        }
+      }
+    });
+
     // Callback para pedir nombre de archivo en Firefox (evita prompt() nativo)
     this.model.onRequestFilename = (defaultName, note) =>
       this.view.showSaveNameModal(defaultName, note);
@@ -665,7 +680,13 @@ class Controller {
         }
       }
 
-      const confirmDisconnect = confirm('¿Estás seguro de que deseas desvincular Google Drive? Las copias de seguridad automáticas en la nube se detendrán.');
+      const confirmDisconnect = confirm(
+        '¿Deseas DESVINCULAR tu cuenta de Google Drive?\n\n' +
+        'Si confirmas:\n' +
+        '• Se detendrán los respaldos automáticos en la nube.\n' +
+        '• No se volverá a subir tu base de datos a Google Drive hasta que te vuelvas a conectar.\n' +
+        '• (Tus respaldos locales seguirán funcionando normalmente).'
+      );
       if (confirmDisconnect) {
         this.model.disconnectGoogleDrive();
         if (this.gdriveSyncInterval) {
@@ -713,7 +734,7 @@ class Controller {
         response_type: 'code',
         scope: 'https://www.googleapis.com/auth/drive.file',
         access_type: 'offline',
-        prompt: 'consent'
+        prompt: 'select_account consent'
       }).toString();
 
       await window.electronAPI.openExternal(authUrl);
@@ -722,7 +743,12 @@ class Controller {
       await this.model.exchangeOAuthCode(code);
       
       this.view.updateGDriveUI('connected');
-      alert('¡Google Drive Vinculado con éxito!\n\nLos respaldos se seguirán haciendo localmente de forma automática (en tus autoguardados locales). El respaldo en Google Drive se realizará cada 30 minutos y se guardará en una carpeta llamada "respaldo calificador" en tu Google Drive.');
+      alert('¡Google Drive Vinculado con éxito!\n\n' +
+            'Funcionamiento de los respaldos:\n' +
+            '• Respaldos locales: se guardan automáticamente en tu equipo cada 60 segundos (sobrescribiendo el archivo local).\n' +
+            '• Respaldos en Google Drive: se suben automáticamente cada 30 minutos a la carpeta "respaldo calificador" (sobrescribiendo el respaldo anterior en la nube).\n' +
+            '• Respaldos manuales: si guardas manualmente con Ctrl+S o presionando "Guardar cambios", se subirá inmediatamente a Google Drive.\n\n' +
+            'Nota: Si experimentas algún inconveniente o error con Google, te recomendamos copiar la dirección web de inicio de sesión y pegarla en una ventana de incógnito.');
 
       this.startGDriveAutoSync();
     } catch (err) {

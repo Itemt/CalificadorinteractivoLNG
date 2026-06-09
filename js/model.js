@@ -1033,6 +1033,47 @@ class Model {
     }
   }
 
+  async getOrCreateBackupFolderId(token) {
+    const searchUrl = 'https://www.googleapis.com/drive/v3/files?' + new URLSearchParams({
+      q: "name = 'respaldo calificador' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+      fields: 'files(id)'
+    });
+    
+    const searchRes = await fetch(searchUrl, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!searchRes.ok) {
+      const errText = await searchRes.text();
+      throw new Error(`Error al buscar carpeta de respaldo: ${errText}`);
+    }
+
+    const searchData = await searchRes.json();
+    if (searchData.files && searchData.files.length > 0) {
+      return searchData.files[0].id;
+    }
+
+    const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: 'respaldo calificador',
+        mimeType: 'application/vnd.google-apps.folder'
+      })
+    });
+
+    if (!createRes.ok) {
+      const errText = await createRes.text();
+      throw new Error(`Error al crear carpeta de respaldo: ${errText}`);
+    }
+
+    const folderInfo = await createRes.json();
+    return folderInfo.id;
+  }
+
   async uploadToGoogleDrive(csvStr) {
     const token = await this.getValidGoogleToken();
     if (!token) {
@@ -1065,10 +1106,13 @@ class Model {
       const fileInfo = await response.json();
       return fileInfo.id;
     } else {
+      const folderId = await this.getOrCreateBackupFolderId(token);
+
       const boundary = 'gdrive_upload_boundary_calificador';
       const metadata = {
         name: filename,
-        mimeType: 'text/csv'
+        mimeType: 'text/csv',
+        parents: [folderId]
       };
 
       const body = [

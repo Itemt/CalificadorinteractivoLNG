@@ -27,6 +27,7 @@ class Controller {
             this.view.hideWelcomeScreen();
             this.refreshView();
             this.startAutoSave();
+            this.startGDriveAutoSync();
             this.view.showToast('📄 Archivo recuperado');
           } else {
             this.view.showError('No se pudo leer el archivo anterior.');
@@ -243,6 +244,7 @@ class Controller {
       this.view.hideWelcomeScreen();
       this.refreshView();
       this.startAutoSave();
+      this.startGDriveAutoSync();
       this.view.showToast('📄 Base de datos creada');
       this.startAppTour();
     } else {
@@ -258,6 +260,7 @@ class Controller {
         this.view.showToast('📂 Archivo cargado con éxito');
         this.refreshView();
         this.startAutoSave();
+        this.startGDriveAutoSync();
       } else {
         this.view.showError('Apertura cancelada.');
       }
@@ -450,11 +453,6 @@ class Controller {
       if (indicator) {
         indicator.style.opacity = '1';
         setTimeout(() => indicator.style.opacity = '0', 2000);
-      }
-      
-      // Google Drive Sync on auto-save
-      if (window.electronAPI && this.model.isGoogleDriveConnected()) {
-        this.syncGDrive().catch(console.error);
       }
     }, 60000);
   }
@@ -656,9 +654,24 @@ class Controller {
     if (!window.electronAPI) return;
 
     if (this.model.isGoogleDriveConnected()) {
+      const btn = document.getElementById('btnGDrive');
+      const hasError = btn && btn.classList.contains('gdrive-error');
+      
+      if (hasError) {
+        const choice = confirm('La sincronización falló. ¿Deseas reintentar respaldar en la nube ahora?\n\n(Aceptar para reintentar, Cancelar para ver la opción de desvincular)');
+        if (choice) {
+          this.syncGDrive().catch(console.error);
+          return;
+        }
+      }
+
       const confirmDisconnect = confirm('¿Estás seguro de que deseas desvincular Google Drive? Las copias de seguridad automáticas en la nube se detendrán.');
       if (confirmDisconnect) {
         this.model.disconnectGoogleDrive();
+        if (this.gdriveSyncInterval) {
+          clearInterval(this.gdriveSyncInterval);
+          this.gdriveSyncInterval = null;
+        }
         this.view.updateGDriveUI('disconnected');
         this.view.showToast('☁️ Google Drive desvinculado');
       }
@@ -709,11 +722,9 @@ class Controller {
       await this.model.exchangeOAuthCode(code);
       
       this.view.updateGDriveUI('connected');
-      this.view.showToast('☁️ Google Drive vinculado con éxito');
+      alert('¡Google Drive Vinculado con éxito!\n\nLos respaldos se seguirán haciendo localmente de forma automática (en tus autoguardados locales). El respaldo en Google Drive se realizará cada 30 minutos y se guardará en una carpeta llamada "respaldo calificador" en tu Google Drive.');
 
-      if (this.model.currentFileHandle || Object.keys(this.model.appData.classes).length > 0) {
-        this.syncGDrive().catch(console.error);
-      }
+      this.startGDriveAutoSync();
     } catch (err) {
       console.error('Error connecting to Google Drive:', err);
       this.model.disconnectGoogleDrive();
@@ -725,6 +736,7 @@ class Controller {
   async syncGDrive() {
     if (!window.electronAPI) return;
     if (!this.model.isGoogleDriveConnected()) return;
+    if (Object.keys(this.model.appData.classes).length === 0) return;
 
     this.view.updateGDriveUI('syncing');
     try {
@@ -734,22 +746,38 @@ class Controller {
     } catch (err) {
       console.error('Error syncing with Google Drive:', err);
       this.view.updateGDriveUI('error');
-      this.view.showToast('⚠️ Error al respaldar en Google Drive');
+      
+      const isNetworkError = !navigator.onLine || err.message.includes('fetch') || err.message.includes('NetworkError') || err.message.includes('Failed to fetch') || err.message.includes('Failed to connect') || err.message.includes('timeout') || err.message.includes('dns') || err.message.includes('net::');
+      
+      if (isNetworkError) {
+        this.view.showToast('⚠️ No se pudo hacer respaldo en la nube por fallo de conexión a drive');
+      } else {
+        this.view.showToast('⚠️ Error al respaldar en Google Drive');
+      }
     }
+  }
+
+  startGDriveAutoSync() {
+    if (this.gdriveSyncInterval) clearInterval(this.gdriveSyncInterval);
+
+    if (window.electronAPI && this.model.isGoogleDriveConnected()) {
+      this.syncGDrive().catch(console.error);
+    }
+
+    // Every 30 minutes (30 * 60 * 1000 ms = 1800000 ms)
+    this.gdriveSyncInterval = setInterval(async () => {
+      if (window.electronAPI && this.model.isGoogleDriveConnected()) {
+        this.syncGDrive().catch(console.error);
+      }
+    }, 1800000);
   }
 
   async saveAndSync() {
     try {
       if (this.model.currentFileHandle) {
         await this.model.saveFile(false);
-        if (this.model.isGoogleDriveConnected()) {
-          this.syncGDrive().catch(console.error);
-        }
       } else {
         await this.model.autoSave();
-        if (this.model.isGoogleDriveConnected()) {
-          this.syncGDrive().catch(console.error);
-        }
       }
     } catch (e) {
       console.error(e);

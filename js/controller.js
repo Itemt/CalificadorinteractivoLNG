@@ -180,7 +180,8 @@ class Controller {
       this.model.currentPeriod,
       this.handleClassSelect.bind(this),
       () => this.view.showAddClassModal(),
-      this.handlePeriodSelect.bind(this)
+      this.handlePeriodSelect.bind(this),
+      this.handleClassReorder.bind(this)
     );
 
     const clsData = this.model.getCurrentClassData();
@@ -191,6 +192,12 @@ class Controller {
       this.model.currentPeriod,
       clsData,
       this.handleClassDateChange.bind(this)
+    );
+
+    this.view.renderClassObservation(
+      clsData,
+      this.handleClassObsChange.bind(this),
+      this.handleClassObsSave.bind(this)
     );
 
     this.view.renderTable(
@@ -256,6 +263,28 @@ class Controller {
       } else {
         this.view.showError('Error al guardar: ' + err.message);
       }
+    }
+  }
+
+  handleClassReorder(draggedId, targetId) {
+    this.model.reorderClasses(draggedId, targetId);
+    this.refreshView();
+    if (this.model.currentFileHandle) {
+      this.model.saveFile(false).catch(() => {});
+    } else {
+      this.model.autoSave();
+    }
+  }
+
+  handleClassObsChange(text) {
+    this.model.updateClassObservation(text);
+  }
+
+  handleClassObsSave() {
+    if (this.model.currentFileHandle) {
+      this.model.saveFile(false).catch(() => {});
+    } else {
+      this.model.autoSave();
     }
   }
 

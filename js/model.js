@@ -66,7 +66,8 @@ class Model {
         basico: [],
         alto: [],
         superior: []
-      }
+      },
+      observacion: ''
     };
     
     CONFIG.PERIODS.forEach(p => {
@@ -240,13 +241,16 @@ class Model {
 
   generateCSV() {
     // Encabezado descriptivo — las columnas de sesión varían por clase según NumSesiones
-    const lines = ['ClaseId,NombreClase,NumSesiones,Periodo,Estudiante,[Conceptos x N],[Practica x N],[Comportamiento x N],[Autoevaluacion x N],[Asistencia x N],[Fechas x N],Puntos,[Observaciones x N]'];
+    const lines = ['ClaseId,NombreClase,NumSesiones,Periodo,Estudiante,[Conceptos x N],[Practica x N],[Comportamiento x N],[Autoevaluacion x N],[Asistencia x N],[Fechas x N],Puntos,[Observaciones x N],ObservacionClase'];
     
     const pad = (arr, n) => Array.from({ length: n }, (_, i) => arr[i] || '');
     const padQuoted = (arr, n) => Array.from({ length: n }, (_, i) => arr[i] ? `"${String(arr[i]).replace(/"/g, '""')}"` : '');
 
     Object.values(this.appData.classes).forEach(cls => {
       const n = cls.numSesiones || 3;
+      const classObs = cls.observacion || '';
+      const cleanClassObs = classObs.replace(/"/g, '""');
+
       CONFIG.PERIODS.forEach(period => {
         const periodId = period.id;
         const gradesForPeriod = this.appData.grades[periodId][cls.id];
@@ -276,7 +280,8 @@ class Model {
             ...pad(g.asistencia       || [], n),
             ...padQuoted(datesArr     || [], n),
             g.puntos || 0,
-            ...padQuoted(obsArr, n)
+            ...padQuoted(obsArr, n),
+            `"${cleanClassObs}"`
           ];
           lines.push(row.join(','));
         });
@@ -349,13 +354,18 @@ class Model {
       const ptsRaw = cols[ptsIdx];
       let observaciones = Array.from({ length: numSesiones }, () => null);
 
-      if (cols.length > ptsIdx + 1 + numSesiones) {
+      if (cols.length >= ptsIdx + 1 + numSesiones) {
         // Formato nuevo [Observaciones x N]
         observaciones = slice(ptsIdx + 1).map(v => v ? v.replace(/""/g, '"') : null);
       } else if (cols.length > ptsIdx + 1) {
         // Formato antiguo (1 columna de observaciones)
         const oldObs = (cols[ptsIdx + 1] || '').replace(/""/g, '"');
         observaciones[0] = oldObs || null;
+      }
+
+      let classObs = '';
+      if (cols.length > ptsIdx + 1 + numSesiones) {
+        classObs = cols[ptsIdx + 1 + numSesiones] ? cols[ptsIdx + 1 + numSesiones].replace(/""/g, '"') : '';
       }
 
       if (!newAppData.classes[classId]) {
@@ -369,7 +379,8 @@ class Model {
             basico: [],
             alto: [],
             superior: []
-          }
+          },
+          observacion: classObs
         };
         CONFIG.PERIODS.forEach(p => {
           newAppData.grades[p.id][classId] = [];
@@ -385,6 +396,9 @@ class Model {
             alto: [],
             superior: []
           };
+        }
+        if (!newAppData.classes[classId].observacion && classObs) {
+          newAppData.classes[classId].observacion = classObs;
         }
       }
       
@@ -809,5 +823,28 @@ class Model {
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
     return dateStr;
+  }
+
+  updateClassObservation(text) {
+    if (!this.currentClass) return;
+    const cls = this.getCurrentClassData();
+    if (!cls) return;
+    cls.observacion = text;
+  }
+
+  reorderClasses(draggedId, targetId) {
+    const classIds = Object.keys(this.appData.classes);
+    const draggedIdx = classIds.indexOf(draggedId);
+    const targetIdx = classIds.indexOf(targetId);
+    if (draggedIdx === -1 || targetIdx === -1 || draggedIdx === targetIdx) return;
+
+    classIds.splice(draggedIdx, 1);
+    classIds.splice(targetIdx, 0, draggedId);
+
+    const newClasses = {};
+    classIds.forEach(id => {
+      newClasses[id] = this.appData.classes[id];
+    });
+    this.appData.classes = newClasses;
   }
 }

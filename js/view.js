@@ -295,6 +295,31 @@ class View {
     }
   }
 
+  renderClassObservation(clsData, onObsChange, onObsSave) {
+    const bar = document.getElementById('classObsBar');
+    const textarea = document.getElementById('classObsText');
+    if (!bar || !textarea) return;
+
+    if (!clsData) {
+      bar.style.display = 'none';
+      return;
+    }
+
+    bar.style.display = 'flex';
+    
+    if (document.activeElement !== textarea) {
+      textarea.value = clsData.observacion || '';
+    }
+
+    textarea.oninput = () => {
+      onObsChange(textarea.value);
+    };
+
+    textarea.onblur = () => {
+      onObsSave();
+    };
+  }
+
   getTodayStr() {
     const d = new Date();
     const y = d.getFullYear();
@@ -489,7 +514,7 @@ class View {
     if (btnOpen) btnOpen.onclick = onOpen;
   }
 
-  renderTabs(classes, currentClass, currentPeriod, onClassSelect, onAddClassClick, onPeriodSelect) {
+  renderTabs(classes, currentClass, currentPeriod, onClassSelect, onAddClassClick, onPeriodSelect, onClassReorder) {
     this.classTabsContainer.innerHTML = '';
     
     Object.values(classes).forEach(cls => {
@@ -511,6 +536,42 @@ class View {
       btn.appendChild(editBtn);
 
       btn.onclick = () => onClassSelect(cls.id);
+
+      // --- HTML5 Drag and Drop logic ---
+      btn.setAttribute('draggable', 'true');
+
+      btn.ondragstart = (e) => {
+        this.draggedClassId = cls.id;
+        btn.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      };
+
+      btn.ondragend = (e) => {
+        btn.classList.remove('dragging');
+        this.draggedClassId = null;
+        this.classTabsContainer.querySelectorAll('.class-tab').forEach(t => t.classList.remove('drag-over'));
+      };
+
+      btn.ondragover = (e) => {
+        e.preventDefault();
+        if (this.draggedClassId && this.draggedClassId !== cls.id) {
+          btn.classList.add('drag-over');
+        }
+      };
+
+      btn.ondragleave = (e) => {
+        btn.classList.remove('drag-over');
+      };
+
+      btn.ondrop = (e) => {
+        e.preventDefault();
+        btn.classList.remove('drag-over');
+        if (this.draggedClassId && this.draggedClassId !== cls.id && onClassReorder) {
+          onClassReorder(this.draggedClassId, cls.id);
+        }
+      };
+      // ---------------------------------
+
       this.classTabsContainer.appendChild(btn);
     });
     

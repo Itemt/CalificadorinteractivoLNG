@@ -888,8 +888,11 @@ class Model {
   }
 
   getGDriveCredentials() {
-    const clientId = CONFIG.GOOGLE_CLIENT_ID || localStorage.getItem('calificador_gdrive_client_id') || '';
-    const clientSecret = CONFIG.GOOGLE_CLIENT_SECRET || localStorage.getItem('calificador_gdrive_client_secret') || '';
+    const defaultClientId = (typeof GDRIVE_CREDS !== 'undefined' && GDRIVE_CREDS.GOOGLE_CLIENT_ID) || CONFIG.GOOGLE_CLIENT_ID || '';
+    const defaultClientSecret = (typeof GDRIVE_CREDS !== 'undefined' && GDRIVE_CREDS.GOOGLE_CLIENT_SECRET) || CONFIG.GOOGLE_CLIENT_SECRET || '';
+    
+    const clientId = defaultClientId || localStorage.getItem('calificador_gdrive_client_id') || '';
+    const clientSecret = defaultClientSecret || localStorage.getItem('calificador_gdrive_client_secret') || '';
     return { clientId, clientSecret };
   }
 

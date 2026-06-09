@@ -6,7 +6,7 @@ const os = require('os');
 const { autoUpdater } = require('electron-updater');
 
 // Configure autoUpdater
-autoUpdater.autoDownload = false;
+autoUpdater.autoDownload = true;
 
 // ─── Global crash logger (se guarda en la carpeta de datos del programa) ──────
 let logPath;

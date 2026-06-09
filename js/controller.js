@@ -551,13 +551,18 @@ class Controller {
         }
       }
 
-      updateModalTitle.textContent = '✨ Actualización Disponible';
-      updateModalMsg.innerHTML = `Una nueva versión <strong>v${info.version}</strong> está disponible.<br><br>¿Deseas descargarla e instalarla ahora?`;
-      updateProgressContainer.style.display = 'none';
-      btnDownloadUpdate.textContent = 'Descargar';
-      btnDownloadUpdate.style.display = 'block';
-      btnDownloadUpdate.disabled = false;
-      btnCancelUpdate.textContent = 'Ignorar';
+      updateModalTitle.textContent = '✨ Descargando Actualización...';
+      updateModalMsg.innerHTML = `Una nueva versión <strong>v${info.version}</strong> está disponible y se está descargando automáticamente en segundo plano.`;
+      
+      // Mostrar la barra de progreso desde el inicio ya que inicia la descarga automáticamente
+      updateProgressBar.style.width = '0%';
+      updateProgressPercent.textContent = '0%';
+      updateProgressSpeed.textContent = 'Calculando...';
+      updateProgressContainer.style.display = 'block';
+
+      // Ocultar botón de descarga inicial, ya se descarga solo
+      btnDownloadUpdate.style.display = 'none';
+      btnCancelUpdate.textContent = 'Ocultar progreso';
       updateModalActions.style.display = 'flex';
       updateModal.style.display = 'flex';
     });
@@ -575,8 +580,8 @@ class Controller {
 
     window.electronAPI.onDownloadProgress((progress) => {
       updateProgressContainer.style.display = 'block';
-      btnDownloadUpdate.style.display = 'none'; // ocultar botón de descargar durante el progreso
-      btnCancelUpdate.textContent = 'Descargar en segundo plano';
+      btnDownloadUpdate.style.display = 'none'; // ocultar botón de descargar
+      btnCancelUpdate.textContent = 'Ocultar progreso';
       const percent = Math.round(progress.percent || 0);
       updateProgressBar.style.width = `${percent}%`;
       updateProgressPercent.textContent = `${percent}%`;
@@ -596,8 +601,9 @@ class Controller {
     window.electronAPI.onUpdateDownloaded((info) => {
       isDownloaded = true;
       updateModalTitle.textContent = '🎉 Descarga Completa';
-      updateModalMsg.innerHTML = `La versión <strong>v${info.version}</strong> se descargó correctamente.<br><br>Haz clic en "Reiniciar y Actualizar" para aplicar la actualización.`;
+      updateModalMsg.innerHTML = `La versión <strong>v${info.version}</strong> se descargó correctamente.<br><br>Haz clic en "Reiniciar y Actualizar" para aplicar la actualización y sobreescribir la versión actual.`;
       updateProgressContainer.style.display = 'none';
+      
       btnDownloadUpdate.textContent = 'Reiniciar y Actualizar';
       btnDownloadUpdate.style.display = 'block';
       btnDownloadUpdate.disabled = false;
@@ -620,9 +626,15 @@ class Controller {
 
       if (updateModal.style.display === 'flex' && !isDownloaded) {
         updateModalTitle.textContent = '⚠️ Error de Actualización';
-        updateModalMsg.innerHTML = `No se pudo descargar la actualización.<br><br><span style="font-size:0.85rem;color:var(--a-color);">${errorMsg}</span>`;
+        updateModalMsg.innerHTML = `No se pudo instalar la actualización automática.<br><br>` +
+          `<span style="font-size:0.85rem;color:var(--a-color);">${errorMsg}</span><br><br>` +
+          `Puedes descargar el instalador manualmente para sobreescribir tu versión actual desde GitHub.`;
         updateProgressContainer.style.display = 'none';
-        btnDownloadUpdate.style.display = 'none';
+        
+        btnDownloadUpdate.textContent = 'Descargar de GitHub';
+        btnDownloadUpdate.style.display = 'block';
+        btnDownloadUpdate.disabled = false;
+        
         btnCancelUpdate.textContent = 'Cerrar';
       }
     });
@@ -635,6 +647,13 @@ class Controller {
     }
 
     btnDownloadUpdate.onclick = async () => {
+      const isGitHubDownload = btnDownloadUpdate.textContent === 'Descargar de GitHub';
+      if (isGitHubDownload) {
+        await window.electronAPI.openExternal('https://github.com/Itemt/CalificadorinteractivoLNG/releases/latest');
+        closeUpdateModal();
+        return;
+      }
+
       if (isDownloaded) {
         window.electronAPI.quitAndInstall();
       } else {

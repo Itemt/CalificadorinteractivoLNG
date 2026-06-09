@@ -7,6 +7,13 @@ class View {
     this.welcomeScreen = document.getElementById('welcomeScreen');
     this.addClassModal = document.getElementById('addClassModal');
     
+    this.btnGDrive = document.getElementById('btnGDrive');
+    this.gdriveSyncIndicator = document.getElementById('gdriveSyncIndicator');
+    
+    if (!window.electronAPI && this.btnGDrive) {
+      this.btnGDrive.style.display = 'none';
+    }
+    
     // Rename Class Modal
     this.renameClassModal = document.getElementById('renameClassModal');
     this.renameClassIdInput = document.getElementById('renameClassId');
@@ -1071,5 +1078,36 @@ class View {
       else { ctx.clearRect(0, 0, canvas.width, canvas.height); this.confettiFrame = null; }
     };
     draw();
+  }
+
+  updateGDriveUI(state, text) {
+    if (!this.btnGDrive) return;
+
+    this.btnGDrive.classList.remove('gdrive-connected', 'gdrive-syncing', 'gdrive-error');
+    
+    if (this.gdriveSyncIndicator) {
+      this.gdriveSyncIndicator.style.opacity = '0';
+    }
+
+    if (state === 'connected') {
+      this.btnGDrive.classList.add('gdrive-connected');
+      this.btnGDrive.textContent = text || '☁️ Conectado';
+      this.btnGDrive.title = 'Google Drive conectado. Haz clic para desvincular.';
+    } else if (state === 'syncing') {
+      this.btnGDrive.classList.add('gdrive-syncing');
+      this.btnGDrive.textContent = text || '☁️ Sincronizando...';
+      this.btnGDrive.title = 'Sincronizando base de datos con Google Drive...';
+      if (this.gdriveSyncIndicator) {
+        this.gdriveSyncIndicator.style.opacity = '1';
+        this.gdriveSyncIndicator.textContent = '☁️ Sincronizando Drive...';
+      }
+    } else if (state === 'error') {
+      this.btnGDrive.classList.add('gdrive-error');
+      this.btnGDrive.textContent = text || '☁️ Error Sync';
+      this.btnGDrive.title = 'Error en la sincronización. Haz clic para reintentar o desvincular.';
+    } else {
+      this.btnGDrive.textContent = text || '☁️ Conectar Drive';
+      this.btnGDrive.title = 'Vincular la aplicación con Google Drive para respaldos automáticos.';
+    }
   }
 }

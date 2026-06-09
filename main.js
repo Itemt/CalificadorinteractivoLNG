@@ -1,5 +1,6 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
+const http = require('http');
 const fs = require('fs');
 const os = require('os');
 const { autoUpdater } = require('electron-updater');
@@ -248,3 +249,88 @@ ipcMain.handle('app:quitAndInstall', () => {
     writeLog('app:quitAndInstall error: ' + err.message);
   }
 });
+
+let oauthServer = null;
+
+ipcMain.handle('gdrive:start-oauth-server', async (event) => {
+  return new Promise((resolve, reject) => {
+    if (oauthServer) {
+      try {
+        oauthServer.close();
+      } catch (e) {}
+      oauthServer = null;
+    }
+
+    oauthServer = http.createServer((req, res) => {
+      const urlParams = new URL(req.url, `http://${req.headers.host}`);
+      const code = urlParams.searchParams.get('code');
+
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      if (code) {
+        res.end(`
+          <html>
+            <body style="font-family: 'Nunito', sans-serif, system-ui; text-align: center; padding: 50px; background-color: #0d0d1a; color: #f0f0ff; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; margin: 0;">
+              <div style="background: #13132a; padding: 40px; border-radius: 16px; border: 1px solid #2e2e5a; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <h1 style="color: #10b981; margin-bottom: 20px;">✓ ¡Autenticación Completada!</h1>
+                <p style="font-size: 1.1rem; color: #9090c0;">Puedes cerrar esta pestaña y volver al Calificador Interactivo LNG.</p>
+              </div>
+            </body>
+          </html>
+        `);
+        resolve(code);
+      } else {
+        res.end(`
+          <html>
+            <body style="font-family: 'Nunito', sans-serif, system-ui; text-align: center; padding: 50px; background-color: #0d0d1a; color: #f0f0ff; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; margin: 0;">
+              <div style="background: #13132a; padding: 40px; border-radius: 16px; border: 1px solid #2e2e5a; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <h1 style="color: #ef4444; margin-bottom: 20px;">✗ Error de Autenticación</h1>
+                <p style="font-size: 1.1rem; color: #9090c0;">No se pudo capturar el código de autorización de Google. Por favor, vuelve a intentarlo.</p>
+              </div>
+            </body>
+          </html>
+        `);
+        reject(new Error('No auth code found'));
+      }
+
+      setTimeout(() => {
+        if (oauthServer) {
+          try {
+            oauthServer.close();
+          } catch (e) {}
+          oauthServer = null;
+        }
+      }, 1000);
+    });
+
+    oauthServer.on('error', (err) => {
+      oauthServer = null;
+      reject(err);
+    });
+
+    oauthServer.listen(8585, 'localhost', () => {
+      // Server successfully started
+    });
+
+    // Timeout: close server if user doesn't authenticate in 3 minutes
+    setTimeout(() => {
+      if (oauthServer) {
+        try {
+          oauthServer.close();
+        } catch (e) {}
+        oauthServer = null;
+        reject(new Error('OAuth server timeout'));
+      }
+    }, 180000);
+  });
+});
+
+ipcMain.handle('app:open-external', async (event, url) => {
+  try {
+    await shell.openExternal(url);
+    return true;
+  } catch (err) {
+    writeLog('Error opening external link: ' + err.message);
+    return false;
+  }
+});
+

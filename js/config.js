@@ -8,5 +8,7 @@ const CONFIG = {
     { id: 'basico', label: 'Básico' },
     { id: 'alto', label: 'Nivel Alto' },
     { id: 'superior', label: 'Superior' }
-  ]
+  ],
+  GOOGLE_CLIENT_ID: '',
+  GOOGLE_CLIENT_SECRET: ''
 };

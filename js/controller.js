@@ -161,6 +161,10 @@ class Controller {
     const btnSaveAs = document.querySelector('.btn-db[title="Guardar como un archivo nuevo"]');
     if (btnSaveAs) btnSaveAs.onclick = () => this.handleSaveFile(true);
 
+    // Google Drive Sync Button
+    const btnGDrive = document.getElementById('btnGDrive');
+    if (btnGDrive) btnGDrive.onclick = this.handleGDriveClick.bind(this);
+
     // Fast-fill header buttons (P⬇, A⬇, S⬇)
     document.querySelectorAll('.h-btn').forEach(btn => {
       btn.onclick = () => {
@@ -213,6 +217,19 @@ class Controller {
     );
 
     this.view.updateStats(this.model.getStats());
+
+    // Update GDrive UI
+    if (window.electronAPI) {
+      if (this.model.isGoogleDriveConnected()) {
+        const btn = this.view.btnGDrive;
+        const isBusy = btn && (btn.classList.contains('gdrive-syncing') || btn.classList.contains('gdrive-error'));
+        if (!isBusy) {
+          this.view.updateGDriveUI('connected');
+        }
+      } else {
+        this.view.updateGDriveUI('disconnected');
+      }
+    }
   }
 
   async handleNewFile() {
@@ -255,6 +272,11 @@ class Controller {
       if (success) {
         this.view.showToast('💾 Cambios guardados correctamente');
         if (isSaveAs) this.startAutoSave();
+        
+        // Sync with Google Drive
+        if (window.electronAPI && this.model.isGoogleDriveConnected()) {
+          this.syncGDrive().catch(console.error);
+        }
       } else {
         this.view.showError('Guardado cancelado.');
       }
@@ -270,11 +292,7 @@ class Controller {
   handleClassReorder(draggedId, targetId) {
     this.model.reorderClasses(draggedId, targetId);
     this.refreshView();
-    if (this.model.currentFileHandle) {
-      this.model.saveFile(false).catch(() => {});
-    } else {
-      this.model.autoSave();
-    }
+    this.saveAndSync();
   }
 
   handleClassObsChange(sessionIdx, text) {
@@ -282,11 +300,7 @@ class Controller {
   }
 
   handleClassObsSave() {
-    if (this.model.currentFileHandle) {
-      this.model.saveFile(false).catch(() => {});
-    } else {
-      this.model.autoSave();
-    }
+    this.saveAndSync();
   }
 
   handleClassSelect(classId) {
@@ -302,9 +316,7 @@ class Controller {
   handleClassDateChange(sessionIdx, dateStr) {
     this.model.updateClassDate(sessionIdx, dateStr);
     this.refreshView();
-    if (this.model.currentFileHandle) {
-      this.model.saveFile(false).catch(() => {});
-    }
+    this.saveAndSync();
   }
 
   handleSaveNewClass() {
@@ -338,9 +350,7 @@ class Controller {
       this.view.launchConfetti();
     }
     
-    if (this.model.currentFileHandle) {
-      this.model.saveFile(false).catch(() => {});
-    }
+    this.saveAndSync();
   }
 
   handleAttendance(idx, sessionIdx) {
@@ -351,9 +361,7 @@ class Controller {
       this.handlePoints.bind(this),
       this.handleObservaciones.bind(this)
     );
-    if (this.model.currentFileHandle) {
-      this.model.saveFile(false).catch(() => {});
-    }
+    this.saveAndSync();
   }
 
   handlePoints(idx, delta) {
@@ -364,9 +372,7 @@ class Controller {
       this.handlePoints.bind(this),
       this.handleObservaciones.bind(this)
     );
-    if (this.model.currentFileHandle) {
-      this.model.saveFile(false).catch(() => {});
-    }
+    this.saveAndSync();
   }
 
   async handleObservaciones(idx, si) {
@@ -390,9 +396,7 @@ class Controller {
       this.handlePoints.bind(this),
       this.handleObservaciones.bind(this)
     );
-    if (this.model.currentFileHandle) {
-      this.model.saveFile(false).catch(() => {});
-    }
+    this.saveAndSync();
     if (trimmed !== prev) {
       this.view.showToast('📝 Observación guardada');
     }
@@ -442,6 +446,11 @@ class Controller {
       if (indicator) {
         indicator.style.opacity = '1';
         setTimeout(() => indicator.style.opacity = '0', 2000);
+      }
+      
+      // Google Drive Sync on auto-save
+      if (window.electronAPI && this.model.isGoogleDriveConnected()) {
+        this.syncGDrive().catch(console.error);
       }
     }, 60000);
   }
@@ -636,6 +645,89 @@ class Controller {
           }
         }
       };
+    }
+  }
+
+  async handleGDriveClick() {
+    if (!window.electronAPI) return;
+
+    if (this.model.isGoogleDriveConnected()) {
+      const confirmDisconnect = confirm('¿Estás seguro de que deseas desvincular Google Drive? Las copias de seguridad automáticas en la nube se detendrán.');
+      if (confirmDisconnect) {
+        this.model.disconnectGoogleDrive();
+        this.view.updateGDriveUI('disconnected');
+        this.view.showToast('☁️ Google Drive desvinculado');
+      }
+    } else {
+      if (!CONFIG.GOOGLE_CLIENT_ID || !CONFIG.GOOGLE_CLIENT_SECRET) {
+        this.view.showError('Las credenciales de Google Drive no están configuradas. Por favor, configúralas en el archivo js/config.js.');
+        return;
+      }
+
+      this.view.updateGDriveUI('syncing', 'Conectando...');
+      try {
+        const serverPromise = window.electronAPI.startOAuthServer();
+        
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` + new URLSearchParams({
+          client_id: CONFIG.GOOGLE_CLIENT_ID,
+          redirect_uri: 'http://localhost:8585',
+          response_type: 'code',
+          scope: 'https://www.googleapis.com/auth/drive.file',
+          access_type: 'offline',
+          prompt: 'consent'
+        }).toString();
+
+        await window.electronAPI.openExternal(authUrl);
+
+        const code = await serverPromise;
+        await this.model.exchangeOAuthCode(code);
+        
+        this.view.updateGDriveUI('connected');
+        this.view.showToast('☁️ Google Drive vinculado con éxito');
+
+        if (this.model.currentFileHandle || Object.keys(this.model.appData.classes).length > 0) {
+          this.syncGDrive().catch(console.error);
+        }
+      } catch (err) {
+        console.error('Error connecting to Google Drive:', err);
+        this.model.disconnectGoogleDrive();
+        this.view.updateGDriveUI('disconnected');
+        this.view.showError('No se pudo vincular con Google Drive: ' + err.message);
+      }
+    }
+  }
+
+  async syncGDrive() {
+    if (!window.electronAPI) return;
+    if (!this.model.isGoogleDriveConnected()) return;
+
+    this.view.updateGDriveUI('syncing');
+    try {
+      const csvStr = this.model.generateCSV();
+      await this.model.uploadToGoogleDrive(csvStr);
+      this.view.updateGDriveUI('connected');
+    } catch (err) {
+      console.error('Error syncing with Google Drive:', err);
+      this.view.updateGDriveUI('error');
+      this.view.showToast('⚠️ Error al respaldar en Google Drive');
+    }
+  }
+
+  async saveAndSync() {
+    try {
+      if (this.model.currentFileHandle) {
+        await this.model.saveFile(false);
+        if (this.model.isGoogleDriveConnected()) {
+          this.syncGDrive().catch(console.error);
+        }
+      } else {
+        await this.model.autoSave();
+        if (this.model.isGoogleDriveConnected()) {
+          this.syncGDrive().catch(console.error);
+        }
+      }
+    } catch (e) {
+      console.error(e);
     }
   }
 }

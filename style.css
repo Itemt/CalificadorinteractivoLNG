@@ -141,6 +141,30 @@ body {
 #tourToggle  { right: 16px; }
 #themeToggle { right: 155px; }
 #aboutToggle { right: 295px; }
+#btnGDrive   { right: 415px; }
+
+#btnGDrive.gdrive-connected {
+  border-color: #10b981;
+  color: #10b981;
+}
+#btnGDrive.gdrive-connected:hover {
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
+}
+#btnGDrive.gdrive-syncing {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  animation: pulse-gdrive 1.5s ease-in-out infinite;
+}
+#btnGDrive.gdrive-error {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+@keyframes pulse-gdrive {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.97); }
+}
+
 .hero-content { position: relative; z-index: 1; }
 .hero-icon {
   font-size: 3rem;

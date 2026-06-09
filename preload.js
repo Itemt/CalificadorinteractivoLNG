@@ -26,5 +26,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   checkForUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),
   downloadUpdate: () => ipcRenderer.invoke('app:downloadUpdate'),
-  quitAndInstall: () => ipcRenderer.invoke('app:quitAndInstall')
+  quitAndInstall: () => ipcRenderer.invoke('app:quitAndInstall'),
+  
+  startOAuthServer: () => ipcRenderer.invoke('gdrive:start-oauth-server'),
+  openExternal: (url) => ipcRenderer.invoke('app:open-external', url)
 });

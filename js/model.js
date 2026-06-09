@@ -886,4 +886,202 @@ class Model {
     });
     this.appData.classes = newClasses;
   }
+
+  async exchangeOAuthCode(code) {
+    if (!CONFIG.GOOGLE_CLIENT_ID || !CONFIG.GOOGLE_CLIENT_SECRET) {
+      throw new Error('Las credenciales de Google Drive no están configuradas en js/config.js');
+    }
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        code,
+        client_id: CONFIG.GOOGLE_CLIENT_ID,
+        client_secret: CONFIG.GOOGLE_CLIENT_SECRET,
+        redirect_uri: 'http://localhost:8585',
+        grant_type: 'authorization_code'
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Error al intercambiar el código: ${errorText}`);
+    }
+
+    const data = await response.json();
+    localStorage.setItem('calificador_gdrive_access_token', data.access_token);
+    if (data.refresh_token) {
+      localStorage.setItem('calificador_gdrive_refresh_token', data.refresh_token);
+    }
+    const expiry = Date.now() + (data.expires_in * 1000);
+    localStorage.setItem('calificador_gdrive_token_expiry', expiry);
+    return true;
+  }
+
+  async refreshGoogleToken() {
+    const refreshToken = localStorage.getItem('calificador_gdrive_refresh_token');
+    if (!refreshToken) {
+      throw new Error('No hay token de actualización disponible. Por favor, vuelve a conectar Google Drive.');
+    }
+    if (!CONFIG.GOOGLE_CLIENT_ID || !CONFIG.GOOGLE_CLIENT_SECRET) {
+      throw new Error('Las credenciales de Google Drive no están configuradas en js/config.js');
+    }
+
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        client_id: CONFIG.GOOGLE_CLIENT_ID,
+        client_secret: CONFIG.GOOGLE_CLIENT_SECRET,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token'
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Error al renovar el token: ${errorText}`);
+    }
+
+    const data = await response.json();
+    localStorage.setItem('calificador_gdrive_access_token', data.access_token);
+    const expiry = Date.now() + (data.expires_in * 1000);
+    localStorage.setItem('calificador_gdrive_token_expiry', expiry);
+    return data.access_token;
+  }
+
+  async getValidGoogleToken() {
+    const accessToken = localStorage.getItem('calificador_gdrive_access_token');
+    const expiry = localStorage.getItem('calificador_gdrive_token_expiry');
+    
+    if (!accessToken || !expiry) {
+      return null;
+    }
+
+    if (Date.now() + 300000 > parseInt(expiry, 10)) {
+      try {
+        return await this.refreshGoogleToken();
+      } catch (err) {
+        console.error('Error auto-refreshing token:', err);
+        this.disconnectGoogleDrive();
+        return null;
+      }
+    }
+    return accessToken;
+  }
+
+  disconnectGoogleDrive() {
+    localStorage.removeItem('calificador_gdrive_access_token');
+    localStorage.removeItem('calificador_gdrive_refresh_token');
+    localStorage.removeItem('calificador_gdrive_token_expiry');
+  }
+
+  isGoogleDriveConnected() {
+    return !!localStorage.getItem('calificador_gdrive_refresh_token');
+  }
+
+  getGDriveFileName() {
+    if (window.electronAPI && typeof this.currentFileHandle === 'string') {
+      const parts = this.currentFileHandle.split(/[/\\]/);
+      return parts[parts.length - 1];
+    }
+    return this.sessionName || 'Mi_Calificador.csv';
+  }
+
+  getGDriveFileId() {
+    const key = this.currentFileHandle ? (typeof this.currentFileHandle === 'string' ? this.currentFileHandle : this.currentFileHandle.name) : 'default';
+    try {
+      const map = JSON.parse(localStorage.getItem('calificador_gdrive_file_ids') || '{}');
+      return map[key] || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  setGDriveFileId(fileId) {
+    const key = this.currentFileHandle ? (typeof this.currentFileHandle === 'string' ? this.currentFileHandle : this.currentFileHandle.name) : 'default';
+    try {
+      const map = JSON.parse(localStorage.getItem('calificador_gdrive_file_ids') || '{}');
+      if (fileId) {
+        map[key] = fileId;
+      } else {
+        delete map[key];
+      }
+      localStorage.setItem('calificador_gdrive_file_ids', JSON.stringify(map));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async uploadToGoogleDrive(csvStr) {
+    const token = await this.getValidGoogleToken();
+    if (!token) {
+      throw new Error('Google Drive no está vinculado.');
+    }
+
+    const filename = this.getGDriveFileName();
+    const fileId = this.getGDriveFileId();
+
+    if (fileId) {
+      const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'text/csv; charset=UTF-8'
+        },
+        body: csvStr
+      });
+
+      if (response.status === 404) {
+        this.setGDriveFileId(null);
+        return await this.uploadToGoogleDrive(csvStr);
+      }
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Error al actualizar en Google Drive: ${errText}`);
+      }
+
+      const fileInfo = await response.json();
+      return fileInfo.id;
+    } else {
+      const boundary = 'gdrive_upload_boundary_calificador';
+      const metadata = {
+        name: filename,
+        mimeType: 'text/csv'
+      };
+
+      const body = [
+        `\r\n--${boundary}\r\n`,
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n',
+        JSON.stringify(metadata),
+        `\r\n--${boundary}\r\n`,
+        'Content-Type: text/csv; charset=UTF-8\r\n\r\n',
+        csvStr,
+        `\r\n--${boundary}--\r\n`
+      ].join('');
+
+      const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': `multipart/related; boundary=${boundary}`
+        },
+        body: body
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Error al crear archivo en Google Drive: ${errText}`);
+      }
+
+      const fileInfo = await response.json();
+      this.setGDriveFileId(fileInfo.id);
+      return fileInfo.id;
+    }
+  }
 }

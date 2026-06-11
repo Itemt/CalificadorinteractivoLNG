@@ -216,9 +216,13 @@ body {
   display: flex;
   justify-content: center;
   gap: 10px;
-  padding: 16px 24px 0;
+  padding: 16px 24px 12px;
   background: var(--bg);
   flex-wrap: wrap;
+}
+#classTabs {
+  position: relative;
+  z-index: 10;
 }
 .tab {
   padding: 10px 26px;
@@ -920,6 +924,8 @@ td.col-dim-cell {
 .btn-export:hover { transform: translateY(-2px); box-shadow: 0 6px 24px #7c4dff88; }
 .period-tabs {
   gap: 10px;
+  position: relative;
+  z-index: 5;
 }
 .period-tab {
   background: var(--surface); color: var(--muted); border: 2px solid var(--border);

@@ -140,6 +140,25 @@ class View {
       }
     });
 
+    // Bind plus/minus buttons for sessions-spin
+    document.querySelectorAll('.sessions-step').forEach(btn => {
+      btn.onclick = (e) => {
+        e.preventDefault();
+        const targetId = btn.getAttribute('data-target');
+        const delta = parseInt(btn.getAttribute('data-delta')) || 0;
+        const input = document.getElementById(targetId);
+        if (input) {
+          let val = parseInt(input.value) || 3;
+          val += delta;
+          const min = parseInt(input.getAttribute('min')) || 1;
+          const max = parseInt(input.getAttribute('max')) || 10;
+          if (val < min) val = min;
+          if (val > max) val = max;
+          input.value = val;
+        }
+      };
+    });
+
     this.setupTheme();
   }
 

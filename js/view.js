@@ -1141,10 +1141,8 @@ class View {
     }
   }
 
-  showGDriveConfigModal(clientId, clientSecret) {
+  showGDriveConfigModal() {
     if (!this.gdriveConfigModal) return;
-    if (this.gdriveClientId) this.gdriveClientId.value = clientId || '';
-    if (this.gdriveClientSecret) this.gdriveClientSecret.value = clientSecret || '';
     this.gdriveConfigModal.style.display = 'flex';
   }
 

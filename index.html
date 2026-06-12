@@ -158,48 +158,26 @@ Carlos Gómez
       </div>
     </div>
   </div>
-  <!-- ===== GOOGLE DRIVE CONFIG MODAL ===== -->
+  <!-- ===== GOOGLE DRIVE LOGIN MODAL ===== -->
   <div id="gdriveConfigModal" class="modal-overlay" style="display:none;">
-    <div class="modal-card modal-card-wide" style="max-width: 600px; text-align: left;">
+    <div class="modal-card" style="max-width: 420px; text-align: center; position: relative;">
       <button type="button" class="close-modal-btn" id="btnCancelGDriveConfig" title="Cerrar">&times;</button>
-      <h3>☁️ Configurar Google Drive</h3>
-      
-      <div style="max-height: 320px; overflow-y: auto; padding-right: 10px; margin-bottom: 20px; font-size: 0.9rem; line-height: 1.5; color: var(--muted);">
-        <p style="margin-bottom: 15px; font-weight: 700; color: var(--white);">Sigue estos pasos para conectar tu cuenta:</p>
-        
-        <ol style="margin-left: 20px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;">
-          <li>Ve a <strong><a href="https://console.cloud.google.com/" target="_blank" style="color: var(--accent); text-decoration: underline; font-weight: bold;">Google Cloud Console</a></strong> e inicia sesión.</li>
-          <li>Crea un nuevo proyecto (puedes llamarlo <em>Calificador Interactivo</em>).</li>
-          <li>En la barra de búsqueda superior, busca <strong>"Google Drive API"</strong> y actívala haciendo clic en <strong>Habilitar</strong>.</li>
-          <li>Accede a <strong>"Pantalla de consentimiento de OAuth"</strong> (OAuth Consent Screen) en el menú lateral:
-            <ul style="margin-left: 20px; margin-top: 5px; list-style-type: circle; display: flex; flex-direction: column; gap: 4px;">
-              <li>Selecciona tipo de usuario <strong>Externo</strong>.</li>
-              <li>Ingresa los datos requeridos (nombre de app y correo).</li>
-              <li>En la sección "Permisos" (Scopes), añade el permiso: <code>https://www.googleapis.com/auth/drive.file</code> (esto permite a la app leer y escribir solo sus propios archivos CSV).</li>
-            </ul>
-          </li>
-          <li>Ve a la sección <strong>"Credenciales"</strong>, haz clic en <strong>"Crear Credenciales"</strong> y selecciona <strong>"ID de cliente de OAuth"</strong>:
-            <ul style="margin-left: 20px; margin-top: 5px; list-style-type: circle; display: flex; flex-direction: column; gap: 4px;">
-              <li>Selecciona Tipo de aplicación: <strong>Aplicación de escritorio</strong> (o <em>Web</em> con URI de redirección autorizada: <code>http://localhost:8585</code>).</li>
-            </ul>
-          </li>
-          <li>Copia el <strong>ID de cliente</strong> y el <strong>Secreto de cliente</strong> generados y pégalos aquí abajo.</li>
-        </ol>
+      <div style="font-size: 3rem; margin-bottom: 15px;">☁️</div>
+      <h3 style="margin-bottom: 10px;">Conectar con Google Drive</h3>
+      <p style="color: var(--muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 25px;">
+        Vincula tu cuenta de Google para hacer respaldos automáticos de tus bases de datos en la nube.
+        <br><br>
+        Se abrirá una ventana de tu navegador para iniciar sesión con tu cuenta de Google de forma segura.
+      </p>
+      <div class="modal-actions" style="flex-direction: column; gap: 10px;">
+        <button id="btnSaveGDriveConfig" class="btn-save" style="width: 100%; padding: 14px; font-size: 1rem; background: linear-gradient(135deg, #4285f4, #34a853); border: none; color: #fff; border-radius: var(--radius-sm); font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(66,133,244,0.3); display: flex; align-items: center; justify-content: center; gap: 10px;">
+          <span style="font-size: 1.2rem;">🔐</span> Iniciar sesión con Google
+        </button>
+        <button id="btnCancelGDriveLogin" class="btn-cancel" style="width: 100%;" onclick="document.getElementById('gdriveConfigModal').style.display='none'">Cancelar</button>
       </div>
-
-      <div class="form-group">
-        <label>ID de Cliente de Google (Client ID)</label>
-        <input type="text" id="gdriveClientId" placeholder="123456-abc.apps.googleusercontent.com" style="width: 100%; padding: 8px 12px; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--white); outline: none;" />
-      </div>
-      
-      <div class="form-group" style="margin-top: 15px;">
-        <label>Secreto de Cliente de Google (Client Secret)</label>
-        <input type="password" id="gdriveClientSecret" placeholder="GOCSPX-abcd1234..." style="width: 100%; padding: 8px 12px; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--white); outline: none;" />
-      </div>
-
-      <div class="modal-actions" style="margin-top: 25px;">
-        <button id="btnSaveGDriveConfig" class="btn-save" style="width: 100%; padding: 12px; font-size: 0.95rem;">💾 Guardar y Conectar</button>
-      </div>
+      <!-- Hidden inputs to maintain compatibility -->
+      <input type="hidden" id="gdriveClientId" />
+      <input type="hidden" id="gdriveClientSecret" />
     </div>
   </div>
 
@@ -392,7 +370,7 @@ Carlos Gómez
       <button type="button" class="close-modal-btn" id="btnCloseAboutModal" title="Cerrar">&times;</button>
       <div style="font-size: 3rem; margin-bottom: 10px;">🎓</div>
       <h2 style="color: var(--accent); margin-bottom: 5px;">Calificador Interactivo</h2>
-      <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 15px;">v2.1.0</p>
+      <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 15px;">v2.2.0</p>
       
       <p style="color: var(--white); font-size: 0.92rem; line-height: 1.6; margin-bottom: 20px;">
         Una herramienta de valoración por dimensiones diseñada para facilitar el seguimiento del desempeño escolar en las áreas cognitiva, praxiológica y axiológica.

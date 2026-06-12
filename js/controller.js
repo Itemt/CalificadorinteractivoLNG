@@ -716,25 +716,12 @@ class Controller {
         this.view.showToast('☁️ Google Drive desvinculado');
       }
     } else {
-      const creds = this.model.getGDriveCredentials();
-      if (!creds.clientId || !creds.clientSecret) {
-        this.view.showGDriveConfigModal(creds.clientId, creds.clientSecret);
-        return;
-      }
-      this.startGDriveOAuthFlow();
+      // Show the login confirmation modal
+      this.view.showGDriveConfigModal();
     }
   }
 
   async handleSaveGDriveConfig() {
-    const clientId = this.view.gdriveClientId.value.trim();
-    const clientSecret = this.view.gdriveClientSecret.value.trim();
-
-    if (!clientId || !clientSecret) {
-      this.view.showError('Debes ingresar tanto el Client ID como el Client Secret para continuar.');
-      return;
-    }
-
-    this.model.saveGDriveCredentials(clientId, clientSecret);
     this.view.hideGDriveConfigModal();
     this.startGDriveOAuthFlow();
   }

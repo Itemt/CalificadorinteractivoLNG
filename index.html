@@ -181,6 +181,27 @@ Carlos Gómez
     </div>
   </div>
 
+  <!-- ===== GOOGLE DRIVE AUTH LINK FALLBACK MODAL ===== -->
+  <div id="gdriveAuthLinkModal" class="modal-overlay" style="display:none; z-index: 10010;">
+    <div class="modal-card" style="max-width: 480px; text-align: center; position: relative;">
+      <button type="button" class="close-modal-btn" id="btnCloseAuthLink" title="Cerrar" onclick="document.getElementById('gdriveAuthLinkModal').style.display='none'">&times;</button>
+      <div style="font-size: 2.5rem; margin-bottom: 10px;">🌐</div>
+      <h3 style="margin-bottom: 10px;">Abre este enlace en tu navegador</h3>
+      <p style="color: var(--muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 15px;">
+        Si el navegador no se abrió automáticamente, copia el enlace de abajo y pégalo en tu navegador para iniciar sesión con Google.
+      </p>
+      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 15px; word-break: break-all; max-height: 120px; overflow-y: auto; text-align: left;">
+        <a id="gdriveAuthLinkUrl" href="#" target="_blank" style="color: var(--accent); font-size: 0.8rem; text-decoration: underline; cursor: pointer;"></a>
+      </div>
+      <div class="modal-actions" style="flex-direction: column; gap: 8px;">
+        <button id="btnCopyAuthLink" class="btn-save" style="width: 100%; padding: 12px; font-size: 0.95rem; background: linear-gradient(135deg, #4285f4, #34a853); border: none; color: #fff; border-radius: var(--radius-sm); font-weight: 800; cursor: pointer;">
+          📋 Copiar enlace
+        </button>
+        <p style="color: var(--muted); font-size: 0.75rem; margin: 0;">Después de iniciar sesión, esta ventana se cerrará automáticamente.</p>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== HERO HEADER ===== -->
   <header class="hero">
     <div class="hero-glow"></div>

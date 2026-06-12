@@ -743,9 +743,41 @@ class Controller {
         prompt: 'select_account consent'
       }).toString();
 
-      await window.electronAPI.openExternal(authUrl);
+      // Try to open the browser
+      const opened = await window.electronAPI.openExternal(authUrl);
+
+      // Always show the fallback link modal so the user can copy/click if browser didn't open
+      const authLinkModal = document.getElementById('gdriveAuthLinkModal');
+      const authLinkUrl = document.getElementById('gdriveAuthLinkUrl');
+      const btnCopyAuthLink = document.getElementById('btnCopyAuthLink');
+
+      if (authLinkModal && authLinkUrl) {
+        authLinkUrl.href = authUrl;
+        authLinkUrl.textContent = authUrl;
+        authLinkModal.style.display = 'flex';
+
+        if (btnCopyAuthLink) {
+          btnCopyAuthLink.onclick = () => {
+            navigator.clipboard.writeText(authUrl).then(() => {
+              btnCopyAuthLink.textContent = '✅ ¡Enlace copiado!';
+              setTimeout(() => { btnCopyAuthLink.textContent = '📋 Copiar enlace'; }, 2000);
+            }).catch(() => {
+              // Fallback: select the link text
+              const range = document.createRange();
+              range.selectNodeContents(authLinkUrl);
+              const sel = window.getSelection();
+              sel.removeAllRanges();
+              sel.addRange(range);
+            });
+          };
+        }
+      }
 
       const code = await serverPromise;
+
+      // Auto-close the auth link modal on success
+      if (authLinkModal) authLinkModal.style.display = 'none';
+
       await this.model.exchangeOAuthCode(code);
       
       this.view.updateGDriveUI('connected');
@@ -759,6 +791,8 @@ class Controller {
       this.startGDriveAutoSync();
     } catch (err) {
       console.error('Error connecting to Google Drive:', err);
+      const authLinkModal = document.getElementById('gdriveAuthLinkModal');
+      if (authLinkModal) authLinkModal.style.display = 'none';
       this.model.disconnectGoogleDrive();
       this.view.updateGDriveUI('disconnected');
       this.view.showError('No se pudo vincular con Google Drive: ' + err.message);

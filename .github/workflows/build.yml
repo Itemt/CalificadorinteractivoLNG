@@ -34,6 +34,7 @@ jobs:
 
   build-win:
     runs-on: windows-latest
+    needs: build-mac
 
     steps:
       - name: Checkout code

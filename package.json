@@ -1,6 +1,6 @@
 {
   "name": "calificador-interactivo",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Calificador interactivo para profesores",
   "main": "main.js",
   "scripts": {
@@ -93,10 +93,10 @@
     ]
   },
   "devDependencies": {
-    "electron": "^41.7.1",
-    "electron-builder": "^26.8.1"
+    "electron": "^42.4.1",
+    "electron-builder": "^26.15.3"
   },
   "dependencies": {
-    "electron-updater": "^6.8.3"
+    "electron-updater": "^6.8.9"
   }
 }

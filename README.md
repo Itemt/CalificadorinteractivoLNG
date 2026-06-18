@@ -39,7 +39,7 @@ Dirígete a la pestaña de [**Releases**](../../releases/latest) de este reposit
 
 ### Windows
 
-1. Descarga `Calificador Interactivo Setup 2.4.0.exe`.
+1. Descarga `Calificador Interactivo Setup 2.5.0.exe`.
 2. Ejecútalo. El instalador **no requiere permisos de administrador** y se instala por usuario.
 3. Se crearán accesos directos en el **Escritorio** y el **Menú de Inicio** automáticamente.
 
@@ -54,7 +54,7 @@ Al ser software independiente sin firma de código comercial, Windows puede most
 
 ### macOS
 
-1. Descarga `Calificador Interactivo-2.4.0.dmg`.
+1. Descarga `Calificador Interactivo-2.5.0.dmg`.
 2. Ábrelo y arrastra el ícono a tu carpeta **Aplicaciones**.
 3. La primera vez, haz clic derecho → *Abrir* si macOS muestra una advertencia de desarrollador no verificado.
 
@@ -135,7 +135,7 @@ GitHub Actions compilará y publicará los instaladores automáticamente en GitH
 |---|---|
 | Vanilla JS (ES6+) | Lógica de la aplicación (MVC) |
 | HTML5 & CSS3 | Interfaz con variables CSS, Flexbox y Grid |
-| [Electron.js](https://www.electronjs.org/) v41 | Framework de escritorio multiplataforma |
+| [Electron.js](https://www.electronjs.org/) v42 | Framework de escritorio multiplataforma |
 | [electron-builder](https://www.electron.build/) v26 | Empaquetado y distribución (NSIS, DMG) |
 
 ---

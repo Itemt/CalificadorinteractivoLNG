@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calificador Interactivo LNG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="icon" href="favicon.png" type="image/png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== WELCOME SCREEN ===== -->
+  <div id="welcomeScreen" class="welcome-overlay">
+    <button class="theme-toggle" id="welcomeThemeToggle" title="Cambiar tema" style="z-index: 101;">☀️</button>
+    <div class="welcome-card">
+      <div class="welcome-icon">🎓</div>
+      <h2 style="margin-bottom: 10px;">¡Bienvenido al Calificador!</h2>
+      <p style="color: var(--muted); margin-bottom: 20px; font-size: 0.95rem; line-height: 1.4;">
+        Crea una nueva base de datos para empezar, o abre un historial guardado.<br>
+        <span style="color: var(--s-color); font-weight: bold; font-size: 0.85rem;">Nota: Solo puedes abrir archivos .csv generados por esta aplicación.</span>
+      </p>
+      <div class="welcome-actions">
+        <button id="btnContinueLast" class="btn-welcome primary" style="display:none; margin-bottom:10px; background:linear-gradient(135deg, #10b981, #059669); box-shadow:0 10px 20px rgba(16,185,129,0.3);">🔄 Continuar archivo anterior</button>
+        <button id="btnNewFile" class="btn-welcome primary">📄 Crear Archivo Nuevo</button>
+        <button id="btnOpenFile" class="btn-welcome">📂 Abrir Archivo (.csv)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ADD CLASS MODAL ===== -->
+  <div id="addClassModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <h3>➕ Agregar Materia / Grado</h3>
+      <div class="form-group">
+        <label>Nombre de la Materia (Ej: Informática, Cuarto B)</label>
+        <input type="text" id="newClassName" placeholder="Nombre visible..." />
+      </div>
+      <div class="form-group">
+        <label>Clases por Nivel</label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="sessions-spin">
+            <button type="button" class="sessions-step" data-target="newClassSessions" data-delta="-1">−</button>
+            <input type="number" id="newClassSessions" min="1" max="10" value="3" />
+            <button type="button" class="sessions-step" data-target="newClassSessions" data-delta="1">+</button>
+          </div>
+          <span style="font-size:0.82rem;color:var(--fg2);">¿Cuántas clases se evalúan en cada nivel?</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Lista de Estudiantes (Un nombre por línea, presiona Enter entre cada uno)</label>
+        <textarea id="newClassStudents" rows="6" placeholder="Juan Pérez
+Ana López
+Carlos Gómez
+..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="btnCancelAddClass" class="btn-cancel">Cancelar</button>
+        <button id="btnSaveNewClass" class="btn-save">Guardar Materia</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SAVE NAME MODAL (Firefox fallback) ===== -->
+  <div id="saveNameModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <h3>💾 Guardar Base de Datos</h3>
+      <p id="saveNameModalNote" style="color:var(--muted); font-size:0.85rem; line-height:1.5; margin-top:10px;"></p>
+      <div class="form-group">
+        <label>Nombre del archivo</label>
+        <input type="text" id="saveNameInput" />
+      </div>
+      <div class="modal-actions" style="flex-wrap:wrap; gap:8px;">
+        <button id="btnCancelSaveName" class="btn-cancel">Cancelar</button>
+        <button id="btnConfirmSaveName" class="btn-save" style="background:var(--surface); color:var(--white); border:2px solid var(--border); font-size:0.85rem;">⬇️ Solo descargar</button>
+        <button id="btnPickerSaveName" class="btn-save">📁 Elegir dónde guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RENAME CLASS MODAL ===== -->
+  <div id="renameClassModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <h3>✏️ Editar Materia</h3>
+      <input type="hidden" id="renameClassId" />
+      <div class="form-group">
+        <label>Nombre de la materia</label>
+        <input type="text" id="renameClassNameInput" placeholder="Nombre de la materia..." />
+      </div>
+      <div class="form-group">
+        <label>Clases por Nivel</label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="sessions-spin">
+            <button type="button" class="sessions-step" data-target="renameClassSessions" data-delta="-1">−</button>
+            <input type="number" id="renameClassSessions" min="1" max="10" value="3" />
+            <button type="button" class="sessions-step" data-target="renameClassSessions" data-delta="1">+</button>
+          </div>
+          <span style="font-size:0.82rem;color:var(--fg2);">Clases evaluadas por nivel</span>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top: 15px;">
+        <label>Estudiantes</label>
+        <div id="renameStudentsContainer" style="max-height:160px; overflow-y:auto; border: 1px solid var(--border); padding: 5px; border-radius:6px; background:var(--bg); display:flex; flex-direction:column; gap:5px;"></div>
+        <button type="button" id="btnAddStudentRename" style="margin-top:8px; padding:4px 8px; font-size:0.8rem; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--fg); cursor:pointer;">+ Añadir estudiante</button>
+      </div>
+      <div class="modal-actions" style="margin-top: 20px;">
+        <button id="btnCancelRename" class="btn-cancel">Cancelar</button>
+        <button id="btnConfirmRename" class="btn-save">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== OBSERVACIONES (por estudiante / nivel) ===== -->
+  <div id="obsModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card modal-card-wide">
+      <h3>📝 Observaciones</h3>
+      <p id="obsModalStudent" class="obs-modal-student"></p>
+      <p class="obs-modal-hint">Opcional. Sirve para recordar por qué quedó en <strong>Alto</strong> o <strong>En proceso</strong> en este nivel (o cualquier nota interna). Se guarda en el CSV con este estudiante y esta materia.</p>
+      <textarea id="obsModalText" rows="5" maxlength="2000" placeholder="Escribe aquí si lo deseas…"></textarea>
+      <div class="modal-actions">
+        <button type="button" id="btnCancelObs" class="btn-cancel">Cancelar</button>
+        <button type="button" id="btnSaveObs" class="btn-save">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SELECCIÓN DE FECHA PERSONALIZADA (CALENDARIO) ===== -->
+  <div id="datePickerModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card calendar-modal">
+      <button type="button" class="close-modal-btn" id="btnCloseCalendarModal" title="Cerrar">&times;</button>
+      <h3 id="datePickerTitle">📅 Seleccionar Fecha</h3>
+      <div class="calendar-header">
+        <button type="button" id="btnPrevMonth" class="cal-nav-btn">◀</button>
+        <span id="calendarMonthYear" class="calendar-month-year"></span>
+        <button type="button" id="btnNextMonth" class="cal-nav-btn">▶</button>
+      </div>
+      <div class="calendar-weekdays">
+        <span>Do</span><span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span>
+      </div>
+      <div id="calendarDaysGrid" class="calendar-days-grid"></div>
+      
+      <!-- ===== CANCELACIÓN DE CLASE (NO HUBO CLASE) ===== -->
+      <div id="noClassSection" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 12px; text-align: left; display: flex; flex-direction: column; gap: 8px;">
+        <label style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 0.85rem; color: var(--muted); cursor: pointer; user-select: none;">
+          <input type="checkbox" id="chkNoClass" style="width: auto; cursor: pointer; transform: scale(1.1);" />
+          <span>❌ Marcar como "No hubo clase"</span>
+        </label>
+        <div id="noClassReasonContainer" style="display: none;">
+          <input type="text" id="txtNoClassReason" placeholder="Motivo (ej. Feriado, Reunión, etc.)" style="width: 100%; padding: 8px 12px; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--white); font-family: inherit; outline: none;" />
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top:15px;">
+        <button type="button" id="btnClearDate" class="btn-cancel" style="background:#ef4444; border-color:#ef4444; color:#fff; flex: 1;">🧹 Borrar</button>
+        <button type="button" id="btnTodayDate" class="btn-save" style="background:var(--accent); border-color:var(--accent); color:#fff; flex: 1;">📅 Hoy</button>
+        <button type="button" id="btnCancelDate" class="btn-cancel" style="flex: 1;">Cancelar</button>
+      </div>
+    </div>
+  </div>
+  <!-- ===== GOOGLE DRIVE LOGIN MODAL ===== -->
+  <div id="gdriveConfigModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card" style="max-width: 420px; text-align: center; position: relative;">
+      <button type="button" class="close-modal-btn" id="btnCancelGDriveConfig" title="Cerrar">&times;</button>
+      <div style="font-size: 3rem; margin-bottom: 15px;">☁️</div>
+      <h3 style="margin-bottom: 10px;">Conectar con Google Drive</h3>
+      <p style="color: var(--muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 25px;">
+        Vincula tu cuenta de Google para hacer respaldos automáticos de tus bases de datos en la nube.
+        <br><br>
+        Se abrirá una ventana de tu navegador para iniciar sesión con tu cuenta de Google de forma segura.
+      </p>
+      <div class="modal-actions" style="flex-direction: column; gap: 10px;">
+        <button id="btnSaveGDriveConfig" class="btn-save" style="width: 100%; padding: 14px; font-size: 1rem; background: linear-gradient(135deg, #4285f4, #34a853); border: none; color: #fff; border-radius: var(--radius-sm); font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(66,133,244,0.3); display: flex; align-items: center; justify-content: center; gap: 10px;">
+          <span style="font-size: 1.2rem;">🔐</span> Iniciar sesión con Google
+        </button>
+        <button id="btnCancelGDriveLogin" class="btn-cancel" style="width: 100%;" onclick="document.getElementById('gdriveConfigModal').style.display='none'">Cancelar</button>
+      </div>
+      <!-- Hidden inputs to maintain compatibility -->
+      <input type="hidden" id="gdriveClientId" />
+      <input type="hidden" id="gdriveClientSecret" />
+    </div>
+  </div>
+
+  <!-- ===== GOOGLE DRIVE AUTH LINK FALLBACK MODAL ===== -->
+  <div id="gdriveAuthLinkModal" class="modal-overlay" style="display:none; z-index: 10010;">
+    <div class="modal-card" style="max-width: 480px; text-align: center; position: relative;">
+      <button type="button" class="close-modal-btn" id="btnCloseAuthLink" title="Cerrar" onclick="document.getElementById('gdriveAuthLinkModal').style.display='none'">&times;</button>
+      <div style="font-size: 2.5rem; margin-bottom: 10px;">🌐</div>
+      <h3 style="margin-bottom: 10px;">Abre este enlace en tu navegador</h3>
+      <p style="color: var(--muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 15px;">
+        Si el navegador no se abrió automáticamente, copia el enlace de abajo y pégalo en tu navegador para iniciar sesión con Google.
+      </p>
+      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 15px; word-break: break-all; max-height: 120px; overflow-y: auto; text-align: left;">
+        <a id="gdriveAuthLinkUrl" href="#" target="_blank" style="color: var(--accent); font-size: 0.8rem; text-decoration: underline; cursor: pointer;"></a>
+      </div>
+      <div class="modal-actions" style="flex-direction: column; gap: 8px;">
+        <button id="btnCopyAuthLink" class="btn-save" style="width: 100%; padding: 12px; font-size: 0.95rem; background: linear-gradient(135deg, #4285f4, #34a853); border: none; color: #fff; border-radius: var(--radius-sm); font-weight: 800; cursor: pointer;">
+          📋 Copiar enlace
+        </button>
+        <p style="color: var(--muted); font-size: 0.75rem; margin: 0;">Después de iniciar sesión, esta ventana se cerrará automáticamente.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== HERO HEADER ===== -->
+  <header class="hero">
+    <div class="hero-glow"></div>
+    <button class="theme-toggle" id="homeToggle" title="Volver al Inicio"><span>🏠</span> Cerrar / Crear Nuevo</button>
+    <div id="autoSaveIndicator" style="position:absolute; top:26px; left:230px; color:var(--s-color); font-size:0.85rem; font-weight:800; opacity:0; transition:opacity 0.5s; pointer-events: none;">☁️ Autoguardando...</div>
+    <div id="gdriveSyncIndicator" style="position:absolute; top:26px; left:370px; color:var(--p-color); font-size:0.85rem; font-weight:800; opacity:0; transition:opacity 0.5s; pointer-events: none;">☁️ Sincronizando Drive...</div>
+    <button class="theme-toggle" id="btnGDrive" title="Vincular con Google Drive">☁️ Conectar Drive</button>
+    <button class="theme-toggle" id="tourToggle" title="Repetir el Tour"><span>❓</span> Tour Guiado</button>
+    <button class="theme-toggle" id="themeToggle" title="Cambiar tema">☀️ Modo Claro</button>
+    <button class="theme-toggle" id="aboutToggle" title="Acerca de">ℹ️ Acerca de</button>
+    <div class="hero-content">
+      <div class="hero-icon">🎓</div>
+      <h1>Calificador Interactivo LNG</h1>
+      <p class="hero-sub">Valoración por dimensiones</p>
+      <div class="legend">
+        <span class="badge badge-s">⭐ Superior</span>
+        <span class="badge badge-a">🔥 Alto</span>
+        <span class="badge badge-p">🌱 En Proceso</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== CLASS TABS ===== -->
+  <nav class="tabs" id="classTabs">
+    <!-- Tabs will be generated dynamically -->
+  </nav>
+
+  <!-- ===== PERIOD TABS ===== -->
+  <nav class="tabs period-tabs">
+    <button class="tab period-tab active" data-period="inicial">⏳ Inicial</button>
+    <button class="tab period-tab" data-period="basico">⏳ Básico</button>
+    <button class="tab period-tab" data-period="alto">⏳ Nivel Alto</button>
+    <button class="tab period-tab" data-period="superior">⏳ Superior</button>
+  </nav>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="container">
+
+    <!-- Stats bar -->
+    <div class="stats-bar" id="statsBar">
+      <div class="stat">
+        <span class="stat-num" id="countS">0</span>
+        <span class="stat-lbl">⭐ Superiores</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="countA">0</span>
+        <span class="stat-lbl">🔥 Altos</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="countP">0</span>
+        <span class="stat-lbl">🌱 En Proceso</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="countTotal">0</span>
+        <span class="stat-lbl">👩‍🎓 Estudiantes</span>
+      </div>
+    </div>
+
+    <!-- ===== SECCIÓN DE FECHAS DE CLASES ===== -->
+    <div class="class-dates-bar" id="classDatesBar" style="display:none;">
+      <div class="class-dates-title">📅 Fechas de las Clases:</div>
+      <div class="class-dates-inputs" id="classDatesInputs"></div>
+    </div>
+
+    <!-- ===== SECCIÓN DE OBSERVACIÓN GENERAL DE LA CLASE ===== -->
+    <div class="class-obs-bar" id="classObsBar" style="display:none;">
+      <div class="class-obs-title">📝 Notas / Observaciones por Clase:</div>
+      <div class="class-obs-inputs" id="classObsInputs"></div>
+    </div>
+
+    <!-- Table wrapper -->
+    <div class="table-wrap">
+      <table id="gradingTable">
+        <thead>
+          <tr>
+            <th class="col-student">
+              👤 Estudiante
+              <div class="col-student-sub">
+                <span>📋 Asistencia</span>
+                <span>⭐ Puntos</span>
+                <span>📝 Obs.</span>
+              </div>
+            </th>
+            <th class="col-dim">
+              <div class="dim-title">📚 C. Cognitivo</div>
+              <div class="session-row header-actions" style="border:none;">
+                <span style="width:16px;flex-shrink:0;"></span>
+                <div class="session-btns">
+                  <button class="h-btn h-p" data-dim="conceptos" data-lvl="P" title="En Proceso">P ⬇</button>
+                  <button class="h-btn h-a" data-dim="conceptos" data-lvl="A" title="Alto">A ⬇</button>
+                  <button class="h-btn h-s" data-dim="conceptos" data-lvl="S" title="Superior">S ⬇</button>
+                </div>
+              </div>
+            </th>
+            <th class="col-dim">
+              <div class="dim-title">🛠️ C. Praxiológico</div>
+              <div class="session-row header-actions" style="border:none;">
+                <span style="width:16px;flex-shrink:0;"></span>
+                <div class="session-btns">
+                  <button class="h-btn h-p" data-dim="practica" data-lvl="P" title="En Proceso">P ⬇</button>
+                  <button class="h-btn h-a" data-dim="practica" data-lvl="A" title="Alto">A ⬇</button>
+                  <button class="h-btn h-s" data-dim="practica" data-lvl="S" title="Superior">S ⬇</button>
+                </div>
+              </div>
+            </th>
+            <th class="col-dim">
+              <div class="dim-title">🤝 C. Axiológico</div>
+              <div class="session-row header-actions" style="border:none;">
+                <span style="width:16px;flex-shrink:0;"></span>
+                <div class="session-btns">
+                  <button class="h-btn h-p" data-dim="comportamiento" data-lvl="P" title="En Proceso">P ⬇</button>
+                  <button class="h-btn h-a" data-dim="comportamiento" data-lvl="A" title="Alto">A ⬇</button>
+                  <button class="h-btn h-s" data-dim="comportamiento" data-lvl="S" title="Superior">S ⬇</button>
+                </div>
+              </div>
+            </th>
+            <th class="col-dim">
+              <div class="dim-title">🙋 Autoevaluación</div>
+              <div class="session-row header-actions" style="border:none;">
+                <span style="width:16px;flex-shrink:0;"></span>
+                <div class="session-btns">
+                  <button class="h-btn h-p" data-dim="autoevaluacion" data-lvl="P" title="En Proceso">P ⬇</button>
+                  <button class="h-btn h-a" data-dim="autoevaluacion" data-lvl="A" title="Alto">A ⬇</button>
+                  <button class="h-btn h-s" data-dim="autoevaluacion" data-lvl="S" title="Superior">S ⬇</button>
+                </div>
+              </div>
+            </th>
+            <th class="col-total">⭐ Valoración / 📋 Trimestre</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Export row -->
+      <div class="action-row">
+        <button class="btn-db" id="btnOpenMain" title="Abrir otra base de datos">📁 Abrir base de datos de estudiantes (.csv)</button>
+        <button class="btn-db" title="Guardar cambios en el archivo actual">💾 Guardar BD</button>
+        <button class="btn-db" title="Guardar como un archivo nuevo">📥 Exportar BD (.csv)</button>
+        <button class="btn-export" id="btnExport" title="Copiar notas a texto plano">📋 Copiar a portapapeles</button>
+        <button class="btn-reset" id="btnReset" title="Reiniciar todas las notas">🔄 Reiniciar clase</button>
+      </div>
+
+  </main>
+
+  <!-- ===== CONFETTI CANVAS ===== -->
+  <canvas id="confetti" style="pointer-events:none;position:fixed;inset:0;z-index:9999;"></canvas>
+
+  <!-- ===== ERROR MODAL ===== -->
+  <div class="modal-overlay" id="errorModal" style="display: none; z-index: 10000;">
+    <div class="modal-card" style="text-align: center;">
+      <h2 style="color: var(--s-color); margin-bottom: 15px;">⚠️ Atención</h2>
+      <p id="errorModalMsg" style="color: var(--muted); margin-bottom: 25px;">Ocurrió un error</p>
+      <button class="btn-save" onclick="document.getElementById('errorModal').style.display='none'" style="width: 100%;">Entendido</button>
+    </div>
+  </div>
+
+  <!-- ===== UPDATE MODAL ===== -->
+  <div class="modal-overlay" id="updateModal" style="display: none; z-index: 10005;">
+    <div class="modal-card" style="text-align: center; max-width: 420px; position: relative;">
+      <button type="button" class="close-modal-btn" id="btnIgnoreUpdateClose" title="Cerrar">&times;</button>
+      <div style="font-size: 3.5rem; margin-bottom: 15px; animation: float 3s ease-in-out infinite;">🚀</div>
+      <h2 id="updateModalTitle" style="color: var(--accent); margin-bottom: 15px; font-weight: 900;">✨ Actualización Disponible</h2>
+      <p id="updateModalMsg" style="color: var(--white); margin-bottom: 20px; line-height: 1.6; font-size: 0.95rem;"></p>
+      
+      <!-- Progress Bar Container -->
+      <div id="updateProgressContainer" style="display: none; margin: 20px 0; text-align: left;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px;">
+          <span id="updateProgressPercent" style="font-weight: 800; color: var(--accent);">0%</span>
+          <span id="updateProgressSpeed" style="font-weight: 800; color: var(--muted);">0 KB/s</span>
+        </div>
+        <div style="background: var(--bg); border: 1px solid var(--border); height: 12px; border-radius: 999px; overflow: hidden; position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);">
+          <div id="updateProgressBar" style="background: linear-gradient(90deg, var(--accent), #b47aff); height: 100%; width: 0%; transition: width 0.1s ease-out; border-radius: 999px;"></div>
+        </div>
+      </div>
+      
+      <div class="modal-actions" id="updateModalActions" style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+        <button id="btnCancelUpdate" class="btn-cancel" style="flex: 1; padding: 12px; font-weight: 800;">Ignorar</button>
+        <button id="btnDownloadUpdate" class="btn-save" style="flex: 1; padding: 12px; font-weight: 800; background: linear-gradient(135deg, var(--accent), #b47aff); border: none; color: #fff; box-shadow: 0 4px 12px rgba(124,77,255,0.3);">Descargar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ABOUT MODAL ===== -->
+  <div class="modal-overlay" id="aboutModal" style="display: none; z-index: 10002;">
+    <div class="modal-card" style="text-align: center; max-width: 420px; position: relative;">
+      <button type="button" class="close-modal-btn" id="btnCloseAboutModal" title="Cerrar">&times;</button>
+      <div style="font-size: 3rem; margin-bottom: 10px;">🎓</div>
+      <h2 style="color: var(--accent); margin-bottom: 5px;">Calificador Interactivo</h2>
+      <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 15px;">v2.4.0</p>
+      
+      <p style="color: var(--white); font-size: 0.92rem; line-height: 1.6; margin-bottom: 20px;">
+        Una herramienta de valoración por dimensiones diseñada para facilitar el seguimiento del desempeño escolar en las áreas cognitiva, praxiológica y axiológica.
+      </p>
+
+      <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-bottom: 15px; text-align: left; font-size: 0.85rem; color: var(--muted);">
+        <p style="margin-bottom: 6px;"><strong>Licencia:</strong> ISC</p>
+        <p><strong>Repositorio:</strong> GitHub (Itemt/CalificadorinteractivoLNG)</p>
+      </div>
+
+      <div class="modal-actions" style="display: flex; flex-direction: column; gap: 8px;">
+        <button id="btnCheckUpdatesManual" class="btn-save" style="width: 100%; background: linear-gradient(135deg, var(--accent), #b47aff); border: none; color: #fff; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">🔍 Buscar Actualizaciones</button>
+        <button id="btnCloseAbout" class="btn-cancel" style="width: 100%;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/gdrive-creds.js"></script>
+  <script src="js/tour.js"></script>
+  <script src="js/model.js"></script>
+  <script src="js/view.js"></script>
+  <script src="js/controller.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

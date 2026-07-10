@@ -105,23 +105,39 @@ class Model {
     return 'S';
   }
 
-  // Consolidado del trimestre: S=todos S; A=al menos uno A; P=2+ en P
+  // Consolidado del trimestre basado en el nivel efectivo de cada periodo:
+  // - Si hay algún nivel "En Proceso" (P) en cualquier periodo → P
+  // - Si todos los periodos con datos son S → S
+  // - Excepción de progreso: si Inicial=A y los demás (Básico, Alto, Superior) son todos S → S
+  // - Si hay al menos un A (sin ningún P) → A
+  // gradesAllPeriods: array de 4 grade objects [inicial, basico, alto, superior]
   trimesterConsolidated(gradesAllPeriods) {
-    // gradesAllPeriods: array of grade objects (one per period)
-    const effs = [];
-    gradesAllPeriods.forEach(grade => {
-      if (!grade) return;
-      CONFIG.DIMS.forEach(d => {
-        const e = this.effectiveForDim(grade[d]);
-        if (e) effs.push(e);
-      });
+    // Calcular el nivel efectivo de cada periodo
+    const periodLevels = gradesAllPeriods.map(grade => {
+      if (!grade) return null;
+      return this.overallLevel(grade);
     });
-    if (effs.length === 0) return null;
-    const countP = effs.filter(e => e === 'P').length;
-    if (countP >= 2) return 'P';
-    if (effs.includes('A')) return 'A';
-    if (effs.every(e => e === 'S')) return 'S';
-    return 'A'; // has some S, no A, less than 2 P
+
+    // Filtrar solo los periodos que tienen datos
+    const withData = periodLevels.filter(l => l !== null);
+    if (withData.length === 0) return null;
+
+    // Regla 1: Cualquier "En Proceso" → En Proceso
+    if (withData.includes('P')) return 'P';
+
+    // Regla 2: Todos Superior → Superior
+    if (withData.every(l => l === 'S')) return 'S';
+
+    // Regla 3 (Excepción de progreso): Inicial=Alto, Básico+Alto+Superior todos en Superior → Superior
+    // Los índices corresponden a CONFIG.PERIODS: [inicial=0, basico=1, alto=2, superior=3]
+    const [lvlInicial, lvlBasico, lvlAlto, lvlSuperior] = periodLevels;
+    const restoPeriods = [lvlBasico, lvlAlto, lvlSuperior].filter(l => l !== null);
+    if (lvlInicial === 'A' && restoPeriods.length > 0 && restoPeriods.every(l => l === 'S')) {
+      return 'S';
+    }
+
+    // Regla 4: Al menos un Alto (sin Proceso) → Alto
+    return 'A';
   }
 
   // Consolidado por estudiante usando todos los periodos actuales
